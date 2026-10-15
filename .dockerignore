@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.vps.example
+node_modules
+npm-debug.log*
+backups
+coverage
+*.log
