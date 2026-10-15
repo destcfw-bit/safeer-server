@@ -981,7 +981,7 @@ export function makeLegacyRpc(app){
     },{expiresIn:"12h"});
     if(wantCaptain){
       const cap=await getCaptainProfile(user.captain_id);
-      return {ok:true,token,role:"CAPTAIN",mustChangePassword:Boolean((await db.query("SELECT must_change_password FROM users WHERE id=$1",[user.id])).rows[0]?.must_change_password),user:legacyCaptain(cap||{})};
+      return {ok:true,token,role:"CAPTAIN",mustChangePassword:false,user:legacyCaptain(cap||{})};
     }
     return {ok:true,token,role:"ACCOUNTANT",user:{id:String(user.id),name:user.username,username:user.username}};
   }
@@ -1245,16 +1245,7 @@ export function makeLegacyRpc(app){
       await verify(args[0],["admin","accountant"]);
       throw Object.assign(new Error("تم إلغاء هذه الأداة في إصدار البداية الجديدة؛ استخدم صفحة «البداية الجديدة» فقط"),{statusCode:410});
     }
-    // Restrict newly auto-registered captains to changing their temporary password.
-    if(!["loginCaptain","loginAccountant","logout","changeMyPassword","getCaptainSiteMaintenanceStatus"].includes(String(method))){
-      try{
-        const session=app.jwt.verify(String(args?.[0]||""));
-        if(session?.role==="captain"){
-          const gate=await db.query("SELECT must_change_password FROM users WHERE id=$1",[session.sub]);
-          if(gate.rows[0]?.must_change_password)throw new Error("MUST_CHANGE_PASSWORD");
-        }
-      }catch(e){if(e.message==="MUST_CHANGE_PASSWORD")throw e}
-    }
+    // Password change is optional for captains in Al Safeer.
     if(!["loginCaptain","loginAccountant","logout"].includes(method)){
       let identity=null;
       try{identity=app.jwt.verify(String(args?.[0]||""))}catch{}
