@@ -198,6 +198,11 @@ app.get("/favicon.ico", async (request, reply) => {
   return reply.code(204).send();
 });
 
+app.get("/assets/safeer-logo.svg", async (request, reply) => {
+  const image=await fs.readFile(new URL("./assets/safeer-logo.svg", import.meta.url));
+  return reply.type("image/svg+xml").send(image);
+});
+
 app.get("/assets/ezwa-logo-gold.svg", async (request, reply) => {
   const image=await fs.readFile(new URL("./assets/ezwa-logo-gold.svg", import.meta.url));
   return reply.type("image/svg+xml").header("Cache-Control","public, max-age=3600").send(image);
