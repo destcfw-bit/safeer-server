@@ -2273,15 +2273,6 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
       if(!res.ok)throw new Error(res.message);
       token=res.token;
       localStorage.setItem(STORAGE_KEY,token);
-      if(res.mustChangePassword){
-        showLogin();
-        passwordRequired=true;
-        openPasswordModal();
-        $('oldPassword').value=$('loginPass').value;
-        toast('يجب تغيير كلمة المرور الأولية قبل استخدام الحساب','error');
-        return;
-      }
-
       // loginCaptain already returns the captain profile, so show the account
       // immediately and load the long statement/history afterwards.
       if(res.user)state=Object.assign({},state,{captain:res.user});
