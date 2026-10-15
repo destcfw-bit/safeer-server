@@ -1,0 +1,22 @@
+{
+  "name": "abshir-server",
+  "version": "3.8.5-85",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@fastify/jwt": "^9.0.1",
+    "bcryptjs": "^3.0.2",
+    "bullmq": "^5.58.5",
+    "fastify": "^5.5.0",
+    "ioredis": "^5.7.0",
+    "pg": "^8.16.3",
+    "xlsx": "^0.18.5"
+  }
+}
