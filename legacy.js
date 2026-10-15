@@ -1460,7 +1460,7 @@ export function makeLegacyRpc(app){
         const c=await createCaptain({name:p.fullName,phone:p.phone,notes:null});
         const balanceMode=String(p.balanceMode||"PREPAID")==="OPEN_NEGATIVE"?"OPEN_NEGATIVE":"PREPAID";
         if(balanceMode!==String(c.balance_mode||"PREPAID"))await db.query(`UPDATE captains SET balance_mode=$2,updated_at=NOW() WHERE id=$1`,[c.id,balanceMode]);
-        await createCaptainUser({captainId:c.id,username:c.phone,password:String(p.password||""),createdBy:me.sub});
+        await createCaptainUser({captainId:c.id,username:c.phone,password:String(p.password||"123456"),createdBy:me.sub});
 
         // Manual registration only: unresolved WhatsApp inventory stays pending while a
         // participant is unregistered. Once an admin/accountant registers the number,
@@ -2202,7 +2202,7 @@ export function makeLegacyRpc(app){
             if(owner.rowCount){skipped.push({id:String(c.id),phone:c.phone,reason:"رقم الدخول مستخدم بحساب آخر"});continue;}
             const ins=await client.query(`
               INSERT INTO users(username,password_hash,role,captain_id,is_active,must_change_password)
-              VALUES($1,$2,'captain',$3,TRUE,TRUE) ON CONFLICT(username) DO NOTHING RETURNING id`,
+              VALUES($1,$2,'captain',$3,TRUE,FALSE) ON CONFLICT(username) DO NOTHING RETURNING id`,
               [c.phone,passwordHash,c.id]);
             if(!ins.rowCount){skipped.push({id:String(c.id),phone:c.phone,reason:"تعارض رقم الدخول"});continue;}
             created++;
