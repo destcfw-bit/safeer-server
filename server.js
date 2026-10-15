@@ -646,7 +646,7 @@ async function autoRegisterNorthCaptain(body, log) {
     const captain=await createCaptain({name,phone,notes:"تسجيل تلقائي من قروب شمال عبر DropConnect"});
     try{
       await createCaptainUser({captainId:captain.id,username:captain.phone,password:"123456",createdBy:null});
-      await db.query("UPDATE users SET must_change_password=TRUE WHERE role='captain' AND captain_id=$1",[captain.id]);
+      // Captain may optionally change the initial password later.
       log.info({captainId:captain.id},"North captain auto-registered from verified WhatsApp PN");
     }catch(err){
       log.error({err,captainId:captain.id},"North captain created but login setup failed");
