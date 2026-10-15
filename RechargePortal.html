@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#b71920" />
+  <title>بوابة شحن أبشر</title>
+  <style>
+    :root{
+      --red:#b71920;--red2:#d92c34;--ink:#22252a;--muted:#7e8794;
+      --line:#efd6d8;--soft:#fff5f5;--panel:#fff;--bg:#fbf8f8;
+      --ok:#178a52;--warn:#a66a00;--shadow:0 18px 60px rgba(67,25,27,.09);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:
+      radial-gradient(circle at 100% 8%,#ffe6e8 0 120px,transparent 121px),
+      radial-gradient(circle at 2% 72%,#fde9ea 0 95px,transparent 96px),
+      var(--bg);color:var(--ink)}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .hidden{display:none!important}
+    .shell{width:min(1200px,calc(100% - 30px));margin:0 auto;padding:28px 0 50px}
+    .top{background:#fff;border:1px solid #f5e6e6;border-radius:22px;box-shadow:var(--shadow);
+      min-height:92px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{width:58px;height:58px;border-radius:16px;background:linear-gradient(145deg,#7d070b,#c5161e);
+      color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+    .brand h1{margin:0;font-size:26px}
+    .brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .userbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .pill{border:1px solid var(--line);background:#fff8f8;border-radius:999px;padding:10px 14px;font-weight:700}
+    .btn{border:0;border-radius:13px;padding:12px 16px;font-weight:800;transition:.18s transform,.18s opacity}
+    .btn:active{transform:scale(.98)}
+    .btn-red{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff}
+    .btn-soft{background:var(--soft);color:var(--red);border:1px solid var(--line)}
+    .btn-dark{background:#282b31;color:#fff}
+    .login-wrap{min-height:calc(100vh - 70px);display:grid;place-items:center;padding:24px}
+    .login{width:min(460px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;
+      box-shadow:0 28px 90px rgba(85,20,25,.15)}
+    .login .logo{margin:0 auto 14px;width:72px;height:72px;font-size:25px}
+    .login h2{text-align:center;margin:8px 0 5px;font-size:28px}
+    .login .sub{text-align:center;color:var(--muted);margin:0 0 22px}
+    .field{display:grid;gap:8px;margin:14px 0}
+    .field label{font-weight:800;font-size:13px}
+    .input{width:100%;border:1px solid #e9d5d6;background:#fff;border-radius:14px;padding:14px 15px;outline:none}
+    .input:focus{border-color:#d96d72;box-shadow:0 0 0 4px #fff0f0}
+    .login .btn{width:100%;padding:14px;margin-top:8px}
+    .alert{border-radius:13px;padding:11px 13px;margin:12px 0;font-size:14px}
+    .alert-error{background:#fff0f0;border:1px solid #f0b5b8;color:#97131a}
+    .alert-ok{background:#effaf4;border:1px solid #b8e3ca;color:#0c7140}
+    .nav{display:flex;gap:8px;margin-top:18px;background:#fff;border:1px solid var(--line);padding:8px;border-radius:18px;
+      box-shadow:var(--shadow);overflow:auto}
+    .nav button{white-space:nowrap;border:0;background:transparent;border-radius:12px;padding:12px 17px;font-weight:900;color:#67262a}
+    .nav button.active{background:#fff0f1;color:var(--red);box-shadow:inset 0 0 0 1px #f0bfc2}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-top:18px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:var(--shadow)}
+    .card h3{margin:0 0 5px;font-size:21px}
+    .card .desc{margin:0 0 18px;color:var(--muted);font-size:13px}
+    .search-row{display:grid;grid-template-columns:1fr auto;gap:10px}
+    .results{margin-top:12px;display:grid;gap:8px;max-height:320px;overflow:auto}
+    .captain{border:1px solid #eee0e1;border-radius:15px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff}
+    .captain.selected{border-color:#e45c63;background:#fff5f5}
+    .captain .name{font-weight:900}
+    .captain .meta{font-size:12px;color:var(--muted);margin-top:4px}
+    .balance{font-weight:900;white-space:nowrap}
+    .package-title{margin:18px 0 10px;font-weight:900}
+    .packages{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+    .package{border:1px solid var(--line);background:#fff;border-radius:16px;padding:16px 8px;text-align:center;font-weight:900}
+    .package strong{display:block;font-size:23px;margin-bottom:3px}
+    .package.selected{border-color:#e14f57;background:#fff0f0;color:var(--red);box-shadow:inset 0 0 0 1px #e14f57}
+    .custom-amount{margin-top:12px;padding:14px;border:1px dashed #db8f93;background:#fffafa;border-radius:16px}
+    .custom-amount .custom-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+    .custom-amount .custom-head strong{color:var(--red)}
+    .custom-amount .custom-head small{color:var(--muted)}
+    .custom-amount-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}
+    .custom-amount .input{direction:ltr;text-align:center;font-weight:900;font-size:19px}
+    .custom-amount .currency{font-weight:900;color:var(--red);white-space:nowrap}
+    .custom-amount.active{border-style:solid;border-color:#e14f57;background:#fff0f0;box-shadow:inset 0 0 0 1px #f1b8bb}
+
+    .create-area{display:flex;gap:10px;margin-top:16px}
+    .create-area .btn{flex:1}
+    .code-box{display:none;margin-top:15px;border:1px dashed #dd7378;background:#fff7f7;border-radius:18px;padding:18px;text-align:center}
+    .code-box.show{display:block}
+    .code-value{font:900 25px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;letter-spacing:1px}
+    .code-box .who{color:var(--muted);font-size:13px;margin:7px 0 12px}
+    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .stat{background:#fff9f9;border:1px solid var(--line);border-radius:18px;padding:16px}
+    .stat span{display:block;color:var(--muted);font-size:12px}
+    .stat strong{display:block;font-size:26px;margin-top:6px}
+    .table-card{margin-top:18px}
+    .filters{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+    .filters .input{max-width:310px}
+    .table-wrap{overflow:auto;border:1px solid #f0e0e1;border-radius:16px}
+    table{width:100%;border-collapse:collapse;min-width:800px;background:#fff}
+    th,td{padding:12px;border-bottom:1px solid #f2e7e7;text-align:right;font-size:13px}
+    th{background:#fff7f7;color:#6f2b2e;position:sticky;top:0}
+    td.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;text-align:right;font-weight:800}
+    .badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}
+    .unused{background:#fff2d9;color:#946000}.used{background:#eaf8ef;color:#0e7743}.cancelled{background:#f2f2f2;color:#666}
+    .empty{padding:24px;text-align:center;color:var(--muted)}
+    .toast{position:fixed;left:18px;bottom:18px;z-index:50;background:#25282d;color:#fff;padding:12px 16px;border-radius:13px;
+      box-shadow:0 14px 35px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .loader{display:inline-block;width:17px;height:17px;border:2px solid currentColor;border-left-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:850px){.grid{grid-template-columns:1fr}.top{align-items:flex-start}.brand h1{font-size:21px}.packages{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:520px){.shell{width:min(100% - 16px,1200px);padding-top:8px}.top{border-radius:18px;padding:14px}.logo{width:48px;height:48px}.brand p{display:none}.userbar .pill{display:none}.card{padding:15px;border-radius:19px}.search-row{grid-template-columns:1fr}.create-area{flex-direction:column}.login-wrap{padding:12px}.login{padding:22px}}
+  </style>
+</head>
+<body>
+  <section id="loginView" class="login-wrap">
+    <form id="loginForm" class="login">
+      <div class="logo">أبشر</div>
+      <h2>بوابة الشحن</h2>
+      <p class="sub">أبشر فزعة الشمال الكبرى</p>
+      <div id="loginAlert"></div>
+      <div class="field">
+        <label>اسم المستخدم</label>
+        <input id="username" class="input" autocomplete="username" placeholder="مثال: F1" />
+      </div>
+      <div class="field">
+        <label>كلمة السر</label>
+        <input id="password" type="password" class="input" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <button id="loginBtn" class="btn btn-red" type="submit">تسجيل الدخول</button>
+    </form>
+  </section>
+
+  <main id="appView" class="hidden">
+    <div class="shell">
+      <header class="top">
+        <div class="brand">
+          <div class="logo">أبشر</div>
+          <div>
+            <h1>بوابة شحن أبشر</h1>
+            <p>إنشاء أكواد الشحن وربطها مباشرة بالكابتن</p>
+          </div>
+        </div>
+        <div class="userbar">
+          <span id="userPill" class="pill">—</span>
+          <button id="refreshBtn" class="btn btn-soft">تحديث</button>
+          <button id="logoutBtn" class="btn btn-dark">خروج</button>
+        </div>
+      </header>
+
+      <nav class="nav">
+        <button class="active">إنشاء كود شحن</button>
+        <button id="focusHistory">سجل الأكواد</button>
+      </nav>
+
+      <section class="grid">
+        <article class="card">
+          <h3>اختيار الكابتن</h3>
+          <p class="desc">ابحث بالاسم أو رقم الهاتف أو المعرّف، ثم اختر فئة الشحن.</p>
+          <div class="search-row">
+            <input id="captainSearch" class="input" placeholder="اكتب اسم الكابتن أو رقمه..." />
+            <button id="searchBtn" class="btn btn-red">بحث</button>
+          </div>
+          <div id="captainResults" class="results">
+            <div class="empty">ابدأ بالبحث عن الكابتن</div>
+          </div>
+
+          <div class="package-title">فئة الشحن</div>
+          <div id="packages" class="packages"></div>
+
+          <div id="customAmountBox" class="custom-amount hidden">
+            <div class="custom-head">
+              <strong>✏️ مبلغ شحن مخصص</strong>
+              <small>متاح لحساب T1 فقط</small>
+            </div>
+            <div class="custom-amount-row">
+              <input id="customAmount" class="input" type="number" min="0.001" max="999999999.999" step="0.001" inputmode="decimal" placeholder="اكتب المبلغ الذي تريده" />
+              <span class="currency">د.أ</span>
+            </div>
+          </div>
+
+          <div class="create-area">
+            <button id="createBtn" class="btn btn-red">إنشاء كود الشحن</button>
+          </div>
+
+          <div id="codeBox" class="code-box">
+            <div class="code-value" id="newCode">—</div>
+            <div class="who" id="newCodeMeta">—</div>
+            <button id="copyBtn" class="btn btn-soft">نسخ الكود</button>
+          </div>
+        </article>
+
+        <aside class="card">
+          <h3>ملخص الشحن</h3>
+          <p class="desc">أرقام مباشرة من قاعدة البيانات.</p>
+          <div class="stats">
+            <div class="stat"><span>أكواد غير مستخدمة</span><strong id="unusedCount">0</strong></div>
+            <div class="stat"><span>أكواد مستخدمة</span><strong id="usedCount">0</strong></div>
+            <div class="stat"><span>قيمة الأكواد المتاحة</span><strong id="unusedValue">0</strong></div>
+            <div class="stat"><span>قيمة أكواد اليوم</span><strong id="todayValue">0</strong></div>
+          </div>
+          <div class="alert alert-ok" style="margin-top:14px">
+            كل كود يرتبط بمعرّف الكابتن ولا يُستخدم إلا مرة واحدة.
+          </div>
+        </aside>
+      </section>
+
+      <section id="history" class="card table-card">
+        <h3>سجل أكواد الشحن</h3>
+        <div class="filters">
+          <input id="historySearch" class="input" placeholder="بحث بالكود أو الكابتن..." />
+          <select id="statusFilter" class="input" style="max-width:200px">
+            <option value="">كل الحالات</option>
+            <option value="UNUSED">غير مستخدم</option>
+            <option value="USED">مستخدم</option>
+            <option value="CANCELLED">ملغي</option>
+          </select>
+          <button id="historyBtn" class="btn btn-soft">بحث</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>الكود</th><th>الكابتن</th><th>القيمة</th><th>الحالة</th><th>أصدره</th><th>وقت الإصدار</th><th>وقت الاستخدام</th>
+            </tr></thead>
+            <tbody id="codesBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  const state = { user:null, captain:null, packageValue:null, lastCode:null, searchTimer:null };
+
+  const errorText = {
+    invalid_credentials:"اسم المستخدم أو كلمة السر غير صحيحة",
+    missing_credentials:"أدخل اسم المستخدم وكلمة السر",
+    not_authenticated:"انتهت الجلسة، سجّل الدخول من جديد",
+    captain_search_failed:"تعذر البحث عن الكباتن",
+    captain_not_found:"الكابتن غير موجود",
+    invalid_request:"تأكد من اختيار الكابتن وفئة الشحن",
+    create_code_failed:"تعذر إنشاء الكود",
+    code_generation_failed:"تعذر توليد كود جديد",
+    too_many_attempts:"محاولات كثيرة، جرّب بعد قليل"
+  };
+
+  async function api(url, options={}) {
+    const res = await fetch(url, {
+      credentials:"same-origin",
+      headers:{"Content-Type":"application/json", ...(options.headers||{})},
+      ...options
+    });
+    const data = await res.json().catch(()=>({ok:false,error:"bad_response"}));
+    if (res.status === 401 && url !== "/api/portal/login") showLogin();
+    if (!res.ok) throw new Error(data.error || "request_failed");
+    return data;
+  }
+
+  function toast(msg) {
+    const el=$("#toast"); el.textContent=msg; el.classList.add("show");
+    clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("show"),2200);
+  }
+  function setBusy(btn,busy,label) {
+    if (!btn) return;
+    if (busy) { btn.dataset.old=btn.innerHTML; btn.disabled=true; btn.innerHTML=`<span class="loader"></span> ${label||"جاري..."}`; }
+    else { btn.disabled=false; if (btn.dataset.old) btn.innerHTML=btn.dataset.old; }
+  }
+  function showLogin() {
+    state.user=null;
+    $("#appView").classList.add("hidden");
+    $("#loginView").classList.remove("hidden");
+  }
+  function renderPackages(){
+    const values=Array.isArray(state.user?.packages)&&state.user.packages.length ? state.user.packages : [10,15,20,30];
+    state.packageValue=null;
+    $("#packages").innerHTML=values.map(v=>`<button class="package" data-value="${Number(v)}" type="button"><strong>${money(v)}</strong>د.أ</button>`).join("");
+    const customAllowed=state.user?.canCustomAmount===true || String(state.user?.username||"").toUpperCase()==="T1";
+    $("#customAmountBox").classList.toggle("hidden",!customAllowed);
+    $("#customAmountBox").classList.remove("active");
+    $("#customAmount").value="";
+    $$("#packages .package").forEach(el=>el.onclick=()=>{
+      $$("#packages .package").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected");
+      if(customAllowed){$("#customAmount").value="";$("#customAmountBox").classList.remove("active")}
+      state.packageValue=Number(el.dataset.value);
+    });
+  }
+
+  $("#customAmount").addEventListener("input",()=>{
+    if(!(state.user?.canCustomAmount===true || String(state.user?.username||"").toUpperCase()==="T1"))return;
+    const raw=$("#customAmount").value.trim();
+    const amount=Number(raw);
+    $$("#packages .package").forEach(x=>x.classList.remove("selected"));
+    const valid=raw!==""&&Number.isFinite(amount)&&amount>0&&amount<=999999999.999;
+    state.packageValue=valid?amount:null;
+    $("#customAmountBox").classList.toggle("active",valid);
+  });
+
+  function showApp() {
+    $("#loginView").classList.add("hidden");
+    $("#appView").classList.remove("hidden");
+    $("#userPill").textContent = `${state.user.displayName} — ${state.user.username}`;
+    renderPackages();
+  }
+
+  async function boot() {
+    try {
+      const d=await api("/api/portal/me");
+      state.user=d.user; showApp(); await refreshAll();
+    } catch { showLogin(); }
+  }
+
+  $("#loginForm").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const btn=$("#loginBtn"); setBusy(btn,true,"دخول");
+    $("#loginAlert").innerHTML="";
+    try {
+      const d=await api("/api/portal/login",{method:"POST",body:JSON.stringify({
+        username:$("#username").value.trim(),
+        password:$("#password").value
+      })});
+      state.user=d.user; showApp(); $("#password").value=""; await refreshAll();
+    } catch(err) {
+      $("#loginAlert").innerHTML=`<div class="alert alert-error">${errorText[err.message]||"تعذر تسجيل الدخول"}</div>`;
+    } finally { setBusy(btn,false); }
+  });
+
+  $("#logoutBtn").onclick=async()=>{ try{await api("/api/portal/logout",{method:"POST",body:"{}"})}catch{} showLogin(); };
+  $("#refreshBtn").onclick=refreshAll;
+  $("#focusHistory").onclick=()=>$("#history").scrollIntoView({behavior:"smooth"});
+
+  async function searchCaptains() {
+    const q=$("#captainSearch").value.trim();
+    if (q.length<2) { $("#captainResults").innerHTML='<div class="empty">اكتب حرفين على الأقل</div>'; return; }
+    const btn=$("#searchBtn"); setBusy(btn,true,"بحث");
+    try {
+      const d=await api(`/api/portal/captains?q=${encodeURIComponent(q)}`);
+      renderCaptains(d.captains||[]);
+    } catch(err) {
+      $("#captainResults").innerHTML=`<div class="alert alert-error">${errorText[err.message]||"تعذر البحث"}</div>`;
+    } finally { setBusy(btn,false); }
+  }
+  $("#searchBtn").onclick=searchCaptains;
+  $("#captainSearch").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchCaptains()}});
+  $("#captainSearch").addEventListener("input",()=>{
+    clearTimeout(state.searchTimer);
+    state.searchTimer=setTimeout(()=>{if($("#captainSearch").value.trim().length>=2)searchCaptains()},350);
+  });
+
+  function renderCaptains(items) {
+    if (!items.length) { $("#captainResults").innerHTML='<div class="empty">لا توجد نتائج</div>'; return; }
+    $("#captainResults").innerHTML=items.map(c=>`
+      <button class="captain" data-id="${esc(c.id)}" type="button">
+        <div><div class="name">${esc(c.name||"بدون اسم")}</div>
+        <div class="meta">${esc(c.phone||"—")} · ${esc(c.id)}</div></div>
+        <div class="balance">${money(c.balance)} د.أ</div>
+      </button>`).join("");
+    $$("#captainResults .captain").forEach((el,i)=>{
+      el.onclick=()=>{
+        $$("#captainResults .captain").forEach(x=>x.classList.remove("selected"));
+        el.classList.add("selected"); state.captain=items[i];
+      };
+    });
+  }
+
+  $("#createBtn").onclick=async()=>{
+    if (!state.captain) return toast("اختر الكابتن أولًا");
+    if (!state.packageValue) return toast(state.user?.canCustomAmount===true?"اختر فئة الشحن أو اكتب مبلغًا مخصصًا":"اختر فئة الشحن");
+    const btn=$("#createBtn"); setBusy(btn,true,"إنشاء");
+    try {
+      const d=await api("/api/portal/codes",{method:"POST",body:JSON.stringify({
+        captainId:state.captain.id, packageValue:state.packageValue
+      })});
+      state.lastCode=d.code.code;
+      $("#newCode").textContent=d.code.code;
+      $("#newCodeMeta").textContent=`${d.code.captain_name} · ${money(d.code.package_value)} د.أ`;
+      $("#codeBox").classList.add("show");
+      toast("تم إنشاء الكود بنجاح");
+      await Promise.all([loadStats(),loadCodes()]);
+    } catch(err){ toast(errorText[err.message]||"تعذر إنشاء الكود"); }
+    finally{setBusy(btn,false)}
+  };
+
+  $("#copyBtn").onclick=async()=>{
+    if(!state.lastCode)return;
+    await navigator.clipboard.writeText(state.lastCode);
+    toast("تم نسخ الكود");
+  };
+
+  async function loadStats(){
+    try{
+      const d=await api("/api/portal/stats"),s=d.stats||{};
+      $("#unusedCount").textContent=s.unused_count||0;
+      $("#usedCount").textContent=s.used_count||0;
+      $("#unusedValue").textContent=money(s.unused_value);
+      $("#todayValue").textContent=money(s.today_value);
+    }catch{}
+  }
+
+  async function loadCodes(){
+    const q=$("#historySearch").value.trim(), status=$("#statusFilter").value;
+    const p=new URLSearchParams(); if(q)p.set("q",q); if(status)p.set("status",status);
+    try{
+      const d=await api(`/api/portal/codes?${p.toString()}`);
+      const items=d.codes||[];
+      $("#codesBody").innerHTML=items.length?items.map(c=>`
+        <tr>
+          <td class="code">${esc(c.code)}</td>
+          <td><strong>${esc(c.captain_name)}</strong><br><small>${esc(c.captain_id)}</small></td>
+          <td>${money(c.package_value)} د.أ</td>
+          <td>${statusBadge(c.status)}</td>
+          <td>${esc(c.issued_by_username)}</td>
+          <td>${dt(c.issued_at)}</td>
+          <td>${c.used_at?dt(c.used_at):"—"}</td>
+        </tr>`).join(""):'<tr><td colspan="7" class="empty">لا توجد أكواد</td></tr>';
+    }catch{}
+  }
+  $("#historyBtn").onclick=loadCodes;
+  $("#statusFilter").onchange=loadCodes;
+
+  async function refreshAll(){ await Promise.all([loadStats(),loadCodes()]); toast("تم التحديث"); }
+
+  function money(v){ const n=Number(v||0); return Number.isInteger(n)?String(n):n.toFixed(2); }
+  function dt(v){ try{return new Intl.DateTimeFormat("ar-JO",{dateStyle:"short",timeStyle:"short"}).format(new Date(v))}catch{return"—"} }
+  function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+  function statusBadge(s){
+    if(s==="USED")return'<span class="badge used">مستخدم</span>';
+    if(s==="CANCELLED")return'<span class="badge cancelled">ملغي</span>';
+    return'<span class="badge unused">غير مستخدم</span>';
+  }
+
+  boot();
+</script>
+</body>
+</html>
