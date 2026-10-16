@@ -2472,8 +2472,8 @@ export async function getCaptainAccount(captainId) {
 
 function randomRechargeCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "AB-";
-  for (let i=0;i<10;i++) out += alphabet[Math.floor(Math.random()*alphabet.length)];
+  let out = "SF-";
+  for (let i=0;i<8;i++) out += alphabet[Math.floor(Math.random()*alphabet.length)];
   return out;
 }
 
