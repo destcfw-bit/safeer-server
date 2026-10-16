@@ -1795,6 +1795,26 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
 }
 </style>
 <link rel="icon" type="image/svg+xml" href="/assets/safeer-logo.svg"><style id="safeer-brand-override">:root{--gold:#E99A22;--red:#0B2341;--primary:#0B2341;--accent:#E99A22}body{accent-color:#E99A22}button.primary,.btn-primary{background:#0B2341!important;color:#fff!important}.brand-logo{content:url("/assets/safeer-logo.svg")!important}</style></head>
+<style id="safeer-login-luxe">
+#loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
+#loginScreen.login-shell.hidden{display:none!important}
+#loginScreen.login-shell:before{content:"السفير  ·  AL SAFEER";position:absolute;top:28px;left:0;right:0;text-align:center;color:#edbe6e;font-size:clamp(22px,4vw,38px);font-weight:900;letter-spacing:2px;text-shadow:0 0 28px #ac782b}
+#loginScreen .login-card{width:min(100%,520px)!important;max-width:520px!important;margin:0 auto!important;padding:clamp(24px,5vw,45px)!important;border:1px solid #b98b4f!important;border-radius:25px!important;background:linear-gradient(145deg,#1d1b1a,#090e16)!important;box-shadow:0 22px 80px #000a,0 0 55px #c4913826!important;color:#f9e8c9!important;animation:safeerEnter .6s ease-out both}
+#loginScreen .brand{text-align:center!important;margin-bottom:25px!important}
+#loginScreen .brand h1{color:#f2c578!important;font-size:clamp(25px,3vw,33px)!important;font-weight:900!important}
+#loginScreen .brand p,#loginScreen .hint{color:#c4b7a6!important}
+#loginScreen .brand-logo{max-width:110px!important;max-height:110px!important;object-fit:contain!important;margin:auto auto 12px!important}
+#loginScreen .form{display:grid!important;gap:15px!important}
+#loginScreen .field label{color:#ecd5ae!important;font-weight:700!important}
+#loginScreen .input{min-height:54px!important;background:#080e17!important;border:1px solid #725c3d!important;border-radius:13px!important;color:#fff3df!important;padding:13px 17px!important}
+#loginScreen .input:focus{outline:0!important;border-color:#f0bc69!important;box-shadow:0 0 0 3px #c9954630!important}
+#loginScreen #loginBtn{min-height:55px!important;border:0!important;border-radius:13px!important;background:linear-gradient(110deg,#c38e3f,#ffe0a0 48%,#c38e3f)!important;color:#17120a!important;font-size:17px!important;font-weight:900!important;box-shadow:0 10px 28px #b77b393b!important}
+#loginScreen .btn-soft{background:#342b20!important;color:#f0c77e!important;border:1px solid #ad8346!important}
+#loginScreen .hint{text-align:center!important;line-height:1.8!important}
+@keyframes safeerEnter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){#loginScreen.login-shell{padding:90px 14px 25px!important}#loginScreen .login-card{padding:25px 20px!important}}
+@media(prefers-reduced-motion:reduce){#loginScreen .login-card{animation:none!important}}
+</style>
 <body>
 
   <div id="roadTransition" class="road-transition" aria-hidden="true">
