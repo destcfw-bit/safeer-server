@@ -1369,7 +1369,7 @@ export async function reviewTransferNative({id,action,note,userId}){
     }
     let codeRow=null;
     for(let i=0;i<8&&!codeRow;i++){
-      const code=`AB-${randomUUID().replace(/-/g,'').slice(0,10).toUpperCase()}`;
+      const code=`SF-${randomUUID().replace(/-/g,'').slice(0,8).toUpperCase()}`;
       try{
         const ins=await client.query(`INSERT INTO recharge_codes(code,amount,created_by_user_id,assigned_captain_id) VALUES($1,$2,$3,$4) RETURNING *`,[code,n(r.amount),userId||null,r.captain_id]);
         codeRow=ins.rows[0];
