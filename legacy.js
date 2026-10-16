@@ -2146,6 +2146,30 @@ export function makeLegacyRpc(app){
         }catch(e){await client.query("ROLLBACK").catch(()=>{});throw e}
         finally{client.release()}
       }
+      case "previewUnusedRechargeCodesReset":{
+        const me=await verify(args[0],["admin"]);
+        if(me.delegated||me.role!=="admin"||String(me.username||"").toLowerCase()!==String(process.env.ADMIN_USERNAME||"").trim().toLowerCase())throw new Error("هذه العملية للحساب الرئيسي فقط");
+        const r=await db.query("SELECT COUNT(*)::int AS count, COALESCE(SUM(amount),0) AS total FROM recharge_codes WHERE status='active'");
+        return {ok:true,count:r.rows[0].count,total:Number(r.rows[0].total)};
+      }
+      case "cancelAllUnusedRechargeCodes":{
+        const me=await verify(args[0],["admin"]);
+        if(me.delegated||me.role!=="admin"||String(me.username||"").toLowerCase()!==String(process.env.ADMIN_USERNAME||"").trim().toLowerCase())throw new Error("هذه العملية للحساب الرئيسي فقط");
+        const p=args[1]||{};
+        if(p.confirm!=="CANCEL_UNUSED_SAFEER_CODES"||!Number.isSafeInteger(p.expectedCount)||p.expectedCount<0)throw new Error("تأكيد الإلغاء غير صالح");
+        const client=await db.connect();
+        try{
+          await client.query("BEGIN");
+          await client.query("SELECT pg_advisory_xact_lock(hashtext('SAFEER_CANCEL_UNUSED_RECHARGE_CODES'))");
+          const before=await client.query("SELECT COUNT(*)::int AS count,COALESCE(SUM(amount),0) AS total FROM recharge_codes WHERE status='active'");
+          if(before.rows[0].count!==p.expectedCount)throw new Error("تغير عدد الأكواد؛ أعد المعاينة قبل الإلغاء");
+          const result=await client.query("UPDATE recharge_codes SET status='cancelled' WHERE status='active' RETURNING id");
+          await client.query("COMMIT");
+          await audit(me.sub,"recharge_code.bulk_cancel_unused","recharge_code",null,{count:result.rowCount,total:Number(before.rows[0].total)}).catch(()=>{});
+          return {ok:true,count:result.rowCount,message:"تم إلغاء الأكواد غير المستخدمة مع الحفاظ على سجلها"};
+        }catch(e){await client.query("ROLLBACK").catch(()=>{});throw e}
+        finally{client.release()}
+      }
       case "getAccountantRechargeReport":{
         await verify(args[0],["admin","accountant"]);
         const records=await db.query(`SELECT rc.id,rc.code,rc.amount,rc.status,rc.created_at,rc.used_at,
