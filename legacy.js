@@ -2194,6 +2194,45 @@ export function makeLegacyRpc(app){
         }catch(e){await client.query("ROLLBACK").catch(()=>{});throw e}
         finally{client.release()}
       }
+      case "resetRechargeAccountingPeriod":{
+        const me=await verify(args[0],["admin"]);
+        if(me.delegated||me.role!=="admin"||String(me.username||"").toLowerCase()!==String(process.env.ADMIN_USERNAME||"").trim().toLowerCase())throw new Error("التصفير للحساب الرئيسي فقط");
+        const p=args[1]||{};
+        if(p.confirm!=="RESET_SAFEER_RECHARGE_ACCOUNTING")throw new Error("تأكيد التصفير غير صالح");
+        const client=await db.connect();
+        try{
+          await client.query("BEGIN");
+          await client.query("SELECT pg_advisory_xact_lock(hashtext('SAFEER_CANCEL_UNUSED_RECHARGE_CODES'))");
+          const last=await client.query("SELECT COALESCE(MAX(closed_at),'1970-01-01'::timestamptz) AS opened_at FROM safeer_recharge_closings");
+          const openedAt=last.rows[0].opened_at;
+          const closedAt=new Date();
+          const report=await client.query(`SELECT COALESCE(u.username,p.username,'غير معروف') AS issuer,
+            COUNT(*)::int AS count,COALESCE(SUM(rc.amount),0) AS issued_total,
+            COALESCE(SUM(rc.amount) FILTER(WHERE rc.status='used'),0) AS used_total,
+            COALESCE(SUM(rc.amount) FILTER(WHERE rc.status='active'),0) AS pending_total,
+            COALESCE(SUM(rc.amount) FILTER(WHERE rc.status='cancelled'),0) AS cancelled_total
+            FROM recharge_codes rc
+            LEFT JOIN users u ON u.id=rc.created_by_user_id
+            LEFT JOIN recharge_portal_users p ON p.id=rc.issued_by_portal_user_id
+            WHERE rc.created_at >= $1 AND rc.created_at < $2
+            GROUP BY COALESCE(u.username,p.username,'غير معروف') ORDER BY issued_total DESC`,[openedAt,closedAt]);
+          const archived=await client.query(`SELECT rc.code,rc.amount,rc.status,rc.created_at,rc.used_at,
+            COALESCE(u.username,p.username,'غير معروف') AS issuer,
+            COALESCE(c.name,used.name,'غير معروف') AS captain_name,
+            COALESCE(c.phone,used.phone,'') AS captain_phone
+            FROM recharge_codes rc
+            LEFT JOIN users u ON u.id=rc.created_by_user_id
+            LEFT JOIN recharge_portal_users p ON p.id=rc.issued_by_portal_user_id
+            LEFT JOIN captains c ON c.id=rc.assigned_captain_id
+            LEFT JOIN captains used ON used.id=rc.used_by_captain_id
+            WHERE rc.created_at >= $1 AND rc.created_at < $2 ORDER BY rc.created_at DESC`,[openedAt,closedAt]);
+          const closing=await client.query("INSERT INTO safeer_recharge_closings(opened_at,closed_at,closed_by_user_id,cancelled_count,snapshot) VALUES($1,$2,$3,0,$4::jsonb) RETURNING id",[openedAt,closedAt,me.sub,JSON.stringify({summary:report.rows,records:archived.rows,kind:"accounting_reset_only"})]);
+          await client.query("COMMIT");
+          await audit(me.sub,"recharge_code.accounting_period_reset","safeer_recharge_closing",closing.rows[0].id,{issuerCount:report.rows.length,codeCount:archived.rows.length}).catch(()=>{});
+          return {ok:true,closingId:String(closing.rows[0].id),issuerCount:report.rows.length,codeCount:archived.rows.length};
+        }catch(e){await client.query("ROLLBACK").catch(()=>{});throw e}
+        finally{client.release()}
+      }
       case "getAccountantRechargeReport":{
         await verify(args[0],["admin","accountant"]);
         const closingId=String(args[1]?.closingId||"");
