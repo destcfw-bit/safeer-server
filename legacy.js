@@ -2135,7 +2135,7 @@ export function makeLegacyRpc(app){
           await client.query("BEGIN");
           const codes=[];
           for(let i=0;i<quantity;i++){
-            const code="AB-"+randomUUID().replace(/-/g,"").slice(0,20).toUpperCase();
+            const code="SF-"+randomUUID().replace(/-/g,"").slice(0,8).toUpperCase();
             const r=await client.query(`INSERT INTO recharge_codes(code,amount,created_by_user_id,assigned_captain_id)
               VALUES($1,$2,$3,NULL) RETURNING id,code,amount,created_at`,[code,amount,me.sub]);
             codes.push({id:String(r.rows[0].id),code:r.rows[0].code,amount:Number(r.rows[0].amount)});
