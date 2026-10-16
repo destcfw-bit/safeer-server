@@ -162,6 +162,16 @@ export async function initDb() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS safeer_recharge_closings (
+      id BIGSERIAL PRIMARY KEY,
+      opened_at TIMESTAMPTZ NOT NULL,
+      closed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      closed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      cancelled_count INTEGER NOT NULL DEFAULT 0,
+      snapshot JSONB NOT NULL DEFAULT '{}'::jsonb
+    );
+    CREATE INDEX IF NOT EXISTS safeer_recharge_closings_closed_idx ON safeer_recharge_closings(closed_at DESC);
+
     CREATE TABLE IF NOT EXISTS recharge_codes (
       id BIGSERIAL PRIMARY KEY,
       code TEXT NOT NULL UNIQUE,
