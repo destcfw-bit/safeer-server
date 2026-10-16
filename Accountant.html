@@ -1660,7 +1660,11 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" id="issueRechargeDirectBtn" onclick="issueRechargeDirect()">⚡ إنشاء الأكواد</button><strong id="rechargeIssuedResult"></strong></div><textarea id="rechargeIssuedCodes" class="input" readonly rows="5" style="display:none;margin-top:12px" aria-label="الأكواد الصادرة"></textarea><button type="button" id="copyRechargeBatchBtn" class="btn btn-soft" style="display:none;margin-top:8px" onclick="navigator.clipboard.writeText(document.getElementById('rechargeIssuedCodes').value).then(()=>toast('تم نسخ جميع الأكواد','success')).catch(()=>toast('تعذر النسخ','error'))">نسخ جميع الأكواد</button>
         </div>
         <div class="panel">
-          <div id="safeerPrimaryCodesReset" class="panel" style="display:none;border:1px solid rgba(190,120,60,.45);margin-bottom:14px">
+          <div id="safeerPrimaryAccountingReset" class="panel" style="display:none;border:1px solid rgba(28,115,97,.35);margin-bottom:14px">
+          <div class="panel-head"><div><h3>💳 تصفير حسابات مُصدري الأكواد</h3><p>يحفظ كشف المحاسبين في الأرشيف ويفتح أسبوعًا جديدًا بأرصدة تقرير صفرية، دون إلغاء الأكواد غير المستخدمة أو تعديل أرصدة الكباتن.</p></div></div>
+          <button type="button" class="btn" onclick="resetSafeerRechargeAccounting()">🔄 تصفير حسابات الأكواد وأرشفة الأسبوع</button>
+        </div>
+        <div id="safeerPrimaryCodesReset" class="panel" style="display:none;border:1px solid rgba(190,120,60,.45);margin-bottom:14px">
           <div class="panel-head"><div><h3>🛡️ تسكير أسبوع الأكواد وفتح أسبوع جديد</h3><p>للحساب الرئيسي فقط. يحفظ تقرير المحاسبين بالأرشيف، ويلغي الأكواد غير المستخدمة ويفتح تقرير أسبوع جديد من الصفر دون المساس بالأرصدة.</p></div></div>
           <button type="button" class="btn btn-danger" onclick="cancelAllUnusedSafeerCodes()">📅 تسكير الأسبوع وإلغاء غير المستخدم</button>
         </div>
@@ -4353,14 +4357,28 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
       await loadData();
     }catch(e){toast(e.message||String(e),"error")}
   };
+  window.resetSafeerRechargeAccounting=async function(){
+    if(state.me?.role!=="admin")return toast("التصفير للحساب الرئيسي فقط","error");
+    if(!confirm("سيتم حفظ حسابات مُصدري الأكواد بالأرشيف وفتح تقرير جديد من الصفر. لن تُلغى الأكواد غير المستخدمة ولن تتغير أرصدة الكباتن. هل تريد المتابعة؟"))return;
+    if(prompt("للتأكيد النهائي اكتب: تصفير")!=="تصفير")return;
+    try{
+      const result=await api("resetRechargeAccountingPeriod",token,{confirm:"RESET_SAFEER_RECHARGE_ACCOUNTING"});
+      if(!result.ok)throw Error(result.message);
+      if(el("safeerRechargeWeek"))el("safeerRechargeWeek").value="";
+      await loadRechargeReport();
+      toast("تمت أرشفة "+result.codeCount+" كود وفتح أسبوع محاسبة جديد","success");
+    }catch(e){toast(e.message||String(e),"error")}
+  };
   async function showSafeerPrimaryResetButton(){
     const panel=document.getElementById("safeerPrimaryCodesReset");
     if(!panel)return;
+    const accountingPanel=document.getElementById("safeerPrimaryAccountingReset");
     panel.style.display="none";
+    if(accountingPanel)accountingPanel.style.display="none";
     if(state.me?.role!=="admin")return;
     try{
       const result=await api("previewUnusedRechargeCodesReset",token);
-      if(result?.ok&&state.me?.role==="admin")panel.style.display="block";
+      if(result?.ok&&state.me?.role==="admin"){panel.style.display="block";if(accountingPanel)accountingPanel.style.display="block";}
     }catch(_){}
   }
   function renderCodes(){showSafeerPrimaryResetButton();
