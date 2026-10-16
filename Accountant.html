@@ -4341,8 +4341,8 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
     try{
       const preview=await api("previewUnusedRechargeCodesReset",token);
       if(!preview.ok)throw Error(preview.message);
-      if(!preview.count)return toast("لا توجد أكواد غير مستخدمة لإلغائها","success");
-      if(!confirm("سيتم إلغاء "+preview.count+" كود غير مستخدم بقيمة إجمالية "+Number(preview.total).toFixed(3)+" د.أ. الأكواد المستخدمة والأرصدة لن تتأثر. هل تريد المتابعة؟"))return;
+      
+      if(!confirm("سيتم تسكير أسبوع الأكواد وحفظ تقرير كل محاسب بالأرشيف، ثم فتح أسبوع جديد من الصفر. سيُلغى "+preview.count+" كود غير مستخدم بقيمة "+Number(preview.total).toFixed(3)+" د.أ. الأكواد المستخدمة والأرصدة لن تتأثر. متابعة؟"))return;
       const typed=prompt("للتأكيد النهائي اكتب: إلغاء");
       if(typed!=="إلغاء")return toast("تم إيقاف العملية","error");
       const res=await api("cancelAllUnusedRechargeCodes",token,{confirm:"CANCEL_UNUSED_SAFEER_CODES",expectedCount:preview.count});
