@@ -4343,9 +4343,15 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
       await loadData();
     }catch(e){toast(e.message||String(e),"error")}
   };
-  function showSafeerPrimaryResetButton(){
+  async function showSafeerPrimaryResetButton(){
     const panel=document.getElementById("safeerPrimaryCodesReset");
-    if(panel)panel.style.display=state.me?.role==="admin"?"block":"none";
+    if(!panel)return;
+    panel.style.display="none";
+    if(state.me?.role!=="admin")return;
+    try{
+      const result=await api("previewUnusedRechargeCodesReset",token);
+      if(result?.ok&&state.me?.role==="admin")panel.style.display="block";
+    }catch(_){}
   }
   function renderCodes(){showSafeerPrimaryResetButton();
     if(!state.codes.length){$('codesTable').innerHTML=empty('لا توجد أكواد');return}
