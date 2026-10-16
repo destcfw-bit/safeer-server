@@ -1661,10 +1661,15 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
         </div>
         <div class="panel">
           <div id="safeerPrimaryCodesReset" class="panel" style="display:none;border:1px solid rgba(190,120,60,.45);margin-bottom:14px">
-          <div class="panel-head"><div><h3>🛡️ تصفير الأكواد غير المستخدمة</h3><p>للحساب الرئيسي فقط. يلغي الأكواد النشطة دون حذف السجلات أو التأثير على الأكواد المستخدمة والأرصدة.</p></div></div>
-          <button type="button" class="btn btn-danger" onclick="cancelAllUnusedSafeerCodes()">🚫 إلغاء جميع الأكواد غير المستخدمة</button>
+          <div class="panel-head"><div><h3>🛡️ تسكير أسبوع الأكواد وفتح أسبوع جديد</h3><p>للحساب الرئيسي فقط. يحفظ تقرير المحاسبين بالأرشيف، ويلغي الأكواد غير المستخدمة ويفتح تقرير أسبوع جديد من الصفر دون المساس بالأرصدة.</p></div></div>
+          <button type="button" class="btn btn-danger" onclick="cancelAllUnusedSafeerCodes()">📅 تسكير الأسبوع وإلغاء غير المستخدم</button>
         </div>
         <div class="panel-head"><div><h3>📊 تقرير أكواد الشحن حسب المحاسب</h3><p>الأكواد الصادرة والمستخدمة والمعلقة والملغاة، مع الإجمالي لكل مستخدم.</p></div><button class="btn btn-soft" onclick="loadRechargeReport()">↻ تحديث التقرير</button></div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0">
+            <label for="safeerRechargeWeek">📅 فترة محاسبة الأكواد:</label>
+            <select id="safeerRechargeWeek" class="input" style="max-width:320px" onchange="loadRechargeReport()"><option value="">الأسبوع الحالي (المفتوح)</option></select>
+          </div>
+          <p class="helper" id="safeerRechargePeriodNote">الأسبوع الحالي يبدأ من آخر تسكير، والأسابيع السابقة محفوظة بالأرشيف.</p>
           <div id="rechargeReportSummary"></div>
           <input class="input" id="rechargeReportSearch" placeholder="بحث بالمحاسب أو الكابتن أو الرقم أو الكود" oninput="renderRechargeReport()" style="margin:12px 0"/>
           <div id="rechargeReportRows"></div>
@@ -4312,7 +4317,11 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
  };
  window.loadRechargeReport=async function(){
    try{
-     const res=await api("getAccountantRechargeReport",token);
+     const selected=el("safeerRechargeWeek")?.value||"";
+     const res=await api("getAccountantRechargeReport",token,{closingId:selected});
+     const picker=el("safeerRechargeWeek");
+     if(picker){picker.innerHTML='<option value="">الأسبوع الحالي (المفتوح)</option>'+(res.archives||[]).map(x=>'<option value="'+esc(x.id)+'">أسبوع مسكّر: '+new Date(x.opened_at).toLocaleDateString("ar-JO")+' — '+new Date(x.closed_at).toLocaleDateString("ar-JO")+'</option>').join("");picker.value=selected;}
+     el("safeerRechargePeriodNote").textContent=res.archived?"أرشيف محفوظ وقت التسكير، للعرض والمحاسبة فقط.":"الأسبوع الحالي: أكواد جديدة فقط منذ آخر تسكير.";
      if(!res.ok)throw Error(res.message);
      report=res;renderRechargeReport();
    }catch(e){el("rechargeReportSummary").textContent="تعذّر تحميل التقرير: "+(e.message||e)}
@@ -4339,6 +4348,7 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
       const res=await api("cancelAllUnusedRechargeCodes",token,{confirm:"CANCEL_UNUSED_SAFEER_CODES",expectedCount:preview.count});
       if(!res.ok)throw Error(res.message);
       toast("تم إلغاء "+res.count+" كود غير مستخدم","success");
+      if(el("safeerRechargeWeek"))el("safeerRechargeWeek").value="";
       await loadRechargeReport();
       await loadData();
     }catch(e){toast(e.message||String(e),"error")}
