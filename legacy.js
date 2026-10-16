@@ -2163,15 +2163,48 @@ export function makeLegacyRpc(app){
           await client.query("SELECT pg_advisory_xact_lock(hashtext('SAFEER_CANCEL_UNUSED_RECHARGE_CODES'))");
           const before=await client.query("SELECT COUNT(*)::int AS count,COALESCE(SUM(amount),0) AS total FROM recharge_codes WHERE status='active'");
           if(before.rows[0].count!==p.expectedCount)throw new Error("تغير عدد الأكواد؛ أعد المعاينة قبل الإلغاء");
+          const last=await client.query("SELECT COALESCE(MAX(closed_at),'1970-01-01'::timestamptz) AS opened_at FROM safeer_recharge_closings");
+          const openedAt=last.rows[0].opened_at;
+          const closedAt=new Date();
           const result=await client.query("UPDATE recharge_codes SET status='cancelled' WHERE status='active' RETURNING id");
+          const report=await client.query(`SELECT COALESCE(u.username,p.username,'غير معروف') AS issuer,
+            COUNT(*)::int AS count,COALESCE(SUM(rc.amount),0) AS issued_total,
+            COALESCE(SUM(rc.amount) FILTER(WHERE rc.status='used'),0) AS used_total,
+            COALESCE(SUM(rc.amount) FILTER(WHERE rc.status='active'),0) AS pending_total,
+            COALESCE(SUM(rc.amount) FILTER(WHERE rc.status='cancelled'),0) AS cancelled_total
+            FROM recharge_codes rc
+            LEFT JOIN users u ON u.id=rc.created_by_user_id
+            LEFT JOIN recharge_portal_users p ON p.id=rc.issued_by_portal_user_id
+            WHERE rc.created_at >= $1 AND rc.created_at <= $2
+            GROUP BY COALESCE(u.username,p.username,'غير معروف') ORDER BY issued_total DESC`,[openedAt,closedAt]);
+          const archived=await client.query(`SELECT rc.code,rc.amount,rc.status,rc.created_at,rc.used_at,
+            COALESCE(u.username,p.username,'غير معروف') AS issuer,
+            COALESCE(c.name,used.name,'غير معروف') AS captain_name,
+            COALESCE(c.phone,used.phone,'') AS captain_phone
+            FROM recharge_codes rc
+            LEFT JOIN users u ON u.id=rc.created_by_user_id
+            LEFT JOIN recharge_portal_users p ON p.id=rc.issued_by_portal_user_id
+            LEFT JOIN captains c ON c.id=rc.assigned_captain_id
+            LEFT JOIN captains used ON used.id=rc.used_by_captain_id
+            WHERE rc.created_at >= $1 AND rc.created_at <= $2 ORDER BY rc.created_at DESC`,[openedAt,closedAt]);
+          const closing=await client.query("INSERT INTO safeer_recharge_closings(opened_at,closed_at,closed_by_user_id,cancelled_count,snapshot) VALUES($1,$2,$3,$4,$5::jsonb) RETURNING id", [openedAt,closedAt,me.sub,result.rowCount,JSON.stringify({summary:report.rows,records:archived.rows})]);
           await client.query("COMMIT");
           await audit(me.sub,"recharge_code.bulk_cancel_unused","recharge_code",null,{count:result.rowCount,total:Number(before.rows[0].total)}).catch(()=>{});
-          return {ok:true,count:result.rowCount,message:"تم إلغاء الأكواد غير المستخدمة مع الحفاظ على سجلها"};
+          return {ok:true,count:result.rowCount,closingId:String(closing.rows[0].id),message:"تم تسكير أسبوع الأكواد وأرشفة التقرير وفتح أسبوع جديد"};
         }catch(e){await client.query("ROLLBACK").catch(()=>{});throw e}
         finally{client.release()}
       }
       case "getAccountantRechargeReport":{
         await verify(args[0],["admin","accountant"]);
+        const closingId=String(args[1]?.closingId||"");
+        const archives=await db.query("SELECT id,opened_at,closed_at,cancelled_count FROM safeer_recharge_closings ORDER BY closed_at DESC LIMIT 100");
+        if(closingId){
+          const closed=await db.query("SELECT snapshot FROM safeer_recharge_closings WHERE id=$1",[closingId]);
+          if(!closed.rowCount)throw new Error("الأسبوع المؤرشف غير موجود");
+          return {ok:true,records:closed.rows[0].snapshot.records||[],summary:closed.rows[0].snapshot.summary||[],archives:archives.rows,archived:true};
+        }
+        const last=await db.query("SELECT COALESCE(MAX(closed_at),'1970-01-01'::timestamptz) AS opened_at FROM safeer_recharge_closings");
+        const openedAt=last.rows[0].opened_at;
         const records=await db.query(`SELECT rc.id,rc.code,rc.amount,rc.status,rc.created_at,rc.used_at,
           COALESCE(issuer.username,portal.username,'غير معروف') AS issuer,
           COALESCE(c.name,used.name,'غير معروف') AS captain_name,
@@ -2181,7 +2214,8 @@ export function makeLegacyRpc(app){
           LEFT JOIN recharge_portal_users portal ON portal.id=rc.issued_by_portal_user_id
           LEFT JOIN captains c ON c.id=rc.assigned_captain_id
           LEFT JOIN captains used ON used.id=rc.used_by_captain_id
-          ORDER BY rc.created_at DESC LIMIT 1000`);
+          WHERE rc.created_at >= $1
+          ORDER BY rc.created_at DESC LIMIT 1000`,[openedAt]);
         const summary=await db.query(`SELECT COALESCE(u.username,p.username,'غير معروف') AS issuer,
           COUNT(*)::int AS count,COALESCE(SUM(rc.amount),0) AS issued_total,
           COALESCE(SUM(rc.amount) FILTER(WHERE rc.status='used'),0) AS used_total,
@@ -2190,8 +2224,9 @@ export function makeLegacyRpc(app){
           FROM recharge_codes rc
           LEFT JOIN users u ON u.id=rc.created_by_user_id
           LEFT JOIN recharge_portal_users p ON p.id=rc.issued_by_portal_user_id
-          GROUP BY COALESCE(u.username,p.username,'غير معروف') ORDER BY issued_total DESC`);
-        return {ok:true,records:records.rows,summary:summary.rows};
+          WHERE rc.created_at >= $1
+          GROUP BY COALESCE(u.username,p.username,'غير معروف') ORDER BY issued_total DESC`,[openedAt]);
+        return {ok:true,records:records.rows,summary:summary.rows,archives:archives.rows,archived:false};
       }
       case "previewImportedCaptainLoginRepair":{
         await verify(args[0],["admin"]);
