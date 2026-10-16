@@ -1660,7 +1660,11 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" id="issueRechargeDirectBtn" onclick="issueRechargeDirect()">⚡ إنشاء الأكواد</button><strong id="rechargeIssuedResult"></strong></div><textarea id="rechargeIssuedCodes" class="input" readonly rows="5" style="display:none;margin-top:12px" aria-label="الأكواد الصادرة"></textarea><button type="button" id="copyRechargeBatchBtn" class="btn btn-soft" style="display:none;margin-top:8px" onclick="navigator.clipboard.writeText(document.getElementById('rechargeIssuedCodes').value).then(()=>toast('تم نسخ جميع الأكواد','success')).catch(()=>toast('تعذر النسخ','error'))">نسخ جميع الأكواد</button>
         </div>
         <div class="panel">
-          <div class="panel-head"><div><h3>📊 تقرير أكواد الشحن حسب المحاسب</h3><p>الأكواد الصادرة والمستخدمة والمعلقة والملغاة، مع الإجمالي لكل مستخدم.</p></div><button class="btn btn-soft" onclick="loadRechargeReport()">↻ تحديث التقرير</button></div>
+          <div id="safeerPrimaryCodesReset" class="panel" style="display:none;border:1px solid rgba(190,120,60,.45);margin-bottom:14px">
+          <div class="panel-head"><div><h3>🛡️ تصفير الأكواد غير المستخدمة</h3><p>للحساب الرئيسي فقط. يلغي الأكواد النشطة دون حذف السجلات أو التأثير على الأكواد المستخدمة والأرصدة.</p></div></div>
+          <button type="button" class="btn btn-danger" onclick="cancelAllUnusedSafeerCodes()">🚫 إلغاء جميع الأكواد غير المستخدمة</button>
+        </div>
+        <div class="panel-head"><div><h3>📊 تقرير أكواد الشحن حسب المحاسب</h3><p>الأكواد الصادرة والمستخدمة والمعلقة والملغاة، مع الإجمالي لكل مستخدم.</p></div><button class="btn btn-soft" onclick="loadRechargeReport()">↻ تحديث التقرير</button></div>
           <div id="rechargeReportSummary"></div>
           <input class="input" id="rechargeReportSearch" placeholder="بحث بالمحاسب أو الكابتن أو الرقم أو الكود" oninput="renderRechargeReport()" style="margin:12px 0"/>
           <div id="rechargeReportRows"></div>
@@ -4323,7 +4327,27 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
  };
  
 
-  function renderCodes(){
+  window.cancelAllUnusedSafeerCodes=async function(){
+    if(state.me?.role!=="admin")return toast("هذه العملية للحساب الرئيسي فقط","error");
+    try{
+      const preview=await api("previewUnusedRechargeCodesReset",token);
+      if(!preview.ok)throw Error(preview.message);
+      if(!preview.count)return toast("لا توجد أكواد غير مستخدمة لإلغائها","success");
+      if(!confirm("سيتم إلغاء "+preview.count+" كود غير مستخدم بقيمة إجمالية "+Number(preview.total).toFixed(3)+" د.أ. الأكواد المستخدمة والأرصدة لن تتأثر. هل تريد المتابعة؟"))return;
+      const typed=prompt("للتأكيد النهائي اكتب: إلغاء");
+      if(typed!=="إلغاء")return toast("تم إيقاف العملية","error");
+      const res=await api("cancelAllUnusedRechargeCodes",token,{confirm:"CANCEL_UNUSED_SAFEER_CODES",expectedCount:preview.count});
+      if(!res.ok)throw Error(res.message);
+      toast("تم إلغاء "+res.count+" كود غير مستخدم","success");
+      await loadRechargeReport();
+      await loadData();
+    }catch(e){toast(e.message||String(e),"error")}
+  };
+  function showSafeerPrimaryResetButton(){
+    const panel=document.getElementById("safeerPrimaryCodesReset");
+    if(panel)panel.style.display=state.me?.role==="admin"?"block":"none";
+  }
+  function renderCodes(){showSafeerPrimaryResetButton();
     if(!state.codes.length){$('codesTable').innerHTML=empty('لا توجد أكواد');return}
     $('codesTable').innerHTML=`<div class="table-wrap"><table class="table"><thead><tr><th>الكود</th><th>نسخ</th><th>الكابتن</th><th>قيمة الرصيد</th><th>الحالة</th><th>الإصدار</th><th>الاستخدام</th></tr></thead><tbody>${state.codes.map(c=>`<tr><td><b class="code-value">${esc(c.Code)}</b></td><td><button class="btn-copy" type="button" onclick="copyCode('${esc(c.Code)}')">نسخ الكود</button></td><td>${esc(c.CaptainName)}</td><td>${money(c.BalanceValue)}</td><td>${statusBadge(c.Status)}</td><td>${date(c.IssuedAt)}</td><td>${date(c.UsedAt)}</td></tr>`).join('')}</tbody></table></div>`;
   }
