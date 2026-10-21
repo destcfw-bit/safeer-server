@@ -60,6 +60,7 @@ async function deleteNorthPolicyReply(payload){
     messageId:payload.idMessage,fromMe:false,participant});
   return {deleted:true};
 }
+function isCommissionLike(value){return /^👍[🏻🏼🏽🏾🏿]?$/.test(String(value||"").replace(/\uFE0F/g,"").trim())}
 function reactionEmoji(md={}){return String(md?.extendedTextMessageData?.text||md?.reactionMessageData?.text||md?.reactionMessageData?.emoji||"").replace(/\uFE0F/g,"").trim()}
 function deletedId(md={}){return String(md?.deletedMessageData?.stanzaId||md?.deletedMessageData?.idMessage||md?.deletedMessageData?.messageId||"").trim()}
 function publicBase(){return String(process.env.PUBLIC_BASE_URL||process.env.RAILWAY_PUBLIC_DOMAIN||"").replace(/\/$/,"").replace(/^([^h])/,'https://$1')}
@@ -2273,7 +2274,7 @@ async function reactionStateBefore(doneId,producerPhone,cutoffMs,excludeEventId=
   rows.sort((a,b)=>a._ms-b._ms);
   if(!rows.length)return {known:false,active:false};
   const last=rows[rows.length-1];
-  return {known:true,active:last._emoji==='👍',emoji:last._emoji,at:last._ms};
+  return {known:true,active:isCommissionLike(last._emoji),emoji:last._emoji,at:last._ms};
 }
 
 async function hasLegacyAutomaticInventory(doneId){
@@ -2666,7 +2667,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
   // and the inventory cannot get stuck just because the account became frozen in the meantime.
   if(type==="reactionMessage"){
     const emoji=reactionEmoji(md),rawDone=targetId(md);
-    if(inventoryOptions(payload).north && emoji && emoji!=="👍"){
+    if(inventoryOptions(payload).north && emoji && !isCommissionLike(emoji)){
       // North permits manager cancellations and partial adjustments only.
       // Other reactions remain ignored, as before.
       if(emoji!=="🚫"&&!partialEmojiQuantity(emoji)){
@@ -2686,7 +2687,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
     // Without this, the 👍 is visible in LIVE but eventById() cannot find the
     // reply, so the commission is held in waiting_review / never posted.
     const done=await resolveWahaStoredMessageId(group||g.groupId||wahaGroupFromMessageId(rawDone)||'',rawDone);
-    if((emoji==="👍"||partialEmojiQuantity(emoji))&&await deleteForEveryoneMarker([done])){await setEventStatus(id,'ignored','الرسالة محذوفة لدى الجميع — لا يعاد احتسابها');return {ignored:true,reason:'delete_everyone_locked',comparisonOnly:comparisonMode}}
+    if((isCommissionLike(emoji)||partialEmojiQuantity(emoji))&&await deleteForEveryoneMarker([done])){await setEventStatus(id,'ignored','الرسالة محذوفة لدى الجميع — لا يعاد احتسابها');return {ignored:true,reason:'delete_everyone_locked',comparisonOnly:comparisonMode}}
     if(emoji==="🚫"){
       const auth=await cancellationAuthorized(sender);
       if(!auth){await setEventStatus(id,"ignored","🚫 غير مصرح");return {ignored:true};}
@@ -2708,7 +2709,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
       // accidentally cancelling the whole job. Excluding the current event also makes
       // replay/recovery idempotent.
       const previous=await reactionStateBefore(done,sender,eventMsFromPayload(payload),id);
-      if(previous.known&&previous.emoji==='👍'){
+      if(previous.known&&isCommissionLike(previous.emoji)){
         if(comparisonMode){const locked=await comparisonCancellationLock(done);if(locked){await setEventStatus(id,'duplicate','الجرد التجريبي مقفل مسبقًا');return {duplicate:true,comparisonOnly:true}}const rev=await cancelComparisonReaction(done,{reason:'إزالة 👍',eventId:id});await setEventStatus(id,rev?'reversed':'duplicate',rev?'تم إلغاء الجرد التجريبي بعد إزالة 👍':'ملغي مسبقًا');return {reversed:rev,likeRemoved:true,comparisonOnly:true}}
         const locked=await activeCancellationLock(done);
         if(locked){
@@ -2723,7 +2724,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
       return {ignored:true,reason:"removed_reaction_was_not_like",previousEmoji:previous.emoji||"",kind:"reactionRemoval"};
     }
     const partialQty=partialEmojiQuantity(emoji);
-    if(partialQty||emoji==="👍"){
+    if(partialQty||isCommissionLike(emoji)){
       const locked=comparisonMode?await comparisonCancellationLock(done):await activeCancellationLock(done);
       if(locked){
         await setEventStatus(id,"ignored",`الجرد مقفل بواسطة 🚫 (${locked.authorized_name||"مسؤول الإلغاء"}) — أعد فتحه من لوحة المحاسب أولًا`);
@@ -2738,7 +2739,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
         return out;
       }catch(e){await setEventStatus(id,"error",e.message);throw e}
     }
-    if(emoji!=="👍"){
+    if(!isCommissionLike(emoji)){
       await setEventStatus(id,"ignored",`Reaction ${emoji} ليس إشارة محاسبية — بدون تغيير مالي`);
       return {ignored:true,reason:"non_accounting_reaction",emoji};
     }
@@ -3199,7 +3200,7 @@ function historyPayload(item,g,selfChatId=""){
   // still carrying reaction-shaped data. Only normalize UNKNOWN wrappers here so a
   // normal quoted reply whose text happens to be an emoji is never misclassified.
   const knownHistoryTypes=new Set(["textMessage","extendedTextMessage","quotedMessage","audioMessage","reactionMessage","deletedMessage","editedMessage"]);
-  const accountingReactionEmoji=rawReactionText==="👍"||rawReactionText==="🚫"||Boolean(partialEmojiQuantity(rawReactionText));
+  const accountingReactionEmoji=isCommissionLike(rawReactionText)||rawReactionText==="🚫"||Boolean(partialEmojiQuantity(rawReactionText));
   const explicitReactionShape=Boolean(Object.keys(rawReaction||{}).length)||/reaction/i.test(type);
   if(!knownHistoryTypes.has(type)&&rawReactionTarget&&(explicitReactionShape||accountingReactionEmoji))type="reactionMessage";
   if(type==="textMessage"){
