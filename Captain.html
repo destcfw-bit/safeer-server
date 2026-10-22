@@ -3300,5 +3300,25 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
 </script>
 
 \n
+
+<section id="captainWithdrawalPanel" style="position:fixed;bottom:18px;left:18px;z-index:9500;max-width:330px;width:calc(100% - 36px);background:#14202b;color:#fff;padding:15px;border:1px solid #c8a65b;border-radius:14px;box-shadow:0 8px 28px #0006;display:none" dir="rtl">
+  <div style="display:flex;justify-content:space-between;align-items:center"><b>💸 سحب رصيد الكابتن</b><button onclick="document.getElementById('captainWithdrawalPanel').style.display='none'">×</button></div>
+  <p id="captainWithdrawalInfo" style="font-size:13px"></p><input id="captainWithdrawalAmount" type="number" min="0.001" step="0.001" placeholder="المبلغ بالدينار" style="width:100%;padding:8px;margin-bottom:8px">
+  <button id="captainWithdrawalSubmit" style="padding:9px;background:#c8a65b;color:#111;border:0;border-radius:8px">إرسال طلب السحب</button>
+  <div id="captainWithdrawalHistory" style="font-size:12px;max-height:130px;overflow:auto"></div>
+</section>
+<button id="captainWithdrawalToggle" style="display:none;position:fixed;bottom:18px;left:18px;z-index:9400;border:0;border-radius:40px;background:#c8a65b;color:#111;padding:13px;font-weight:bold">💸 طلب سحب</button>
+<script>
+(function(){
+ const el=id=>document.getElementById(id), key='abshir_captain_token';
+ const rpc=async(method,...args)=>{const r=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok||j.__rpcError||j.__error)throw Error(j.message||j.error||'تعذر الاتصال');return j};
+ let state=null;
+ async function refresh(){const token=localStorage.getItem(key);if(!token)return;try{state=await rpc('getCaptainWithdrawalData',token);el('captainWithdrawalToggle').style.display=state.classification==='consumer'?'none':'block';el('captainWithdrawalInfo').textContent='المتاح للسحب: '+state.maximum+' د.أ — '+(state.windowOpen?'التقديم مفتوح':'التقديم الخميس والجمعة فقط');el('captainWithdrawalSubmit').disabled=!state.windowOpen||state.maximum<=0;el('captainWithdrawalHistory').textContent=state.requests.map(x=>'#'+x.id+' — '+x.amount+' د.أ — '+x.status).join(' | ');if(state.classification!=='consumer'&&!state.announcementSeen){const popup=document.createElement('div');popup.style.cssText='position:fixed;inset:0;background:#000a;z-index:99999;display:grid;place-items:center';popup.innerHTML='<div style="background:#14202b;color:white;padding:28px;border-radius:18px;text-align:center;max-width:360px" dir="rtl"><h3>🎉 ميزة سحب الرصيد</h3><p>تقدر تطلب سحب رصيدك الخميس والجمعة من زر طلب سحب.</p><button id="withdrawalDismiss" disabled>انتظر 10 ثوانٍ</button></div>';document.body.appendChild(popup);let n=10;const timer=setInterval(()=>{n--;const b=popup.querySelector('button');if(n<=0){clearInterval(timer);b.disabled=false;b.textContent='فهمت';b.onclick=async()=>{await rpc('markWithdrawalAnnouncementSeen',token);popup.remove()}}else b.textContent='انتظر '+n+' ثوانٍ'},1000)}}catch(e){console.warn('withdrawal unavailable',e)}}
+ el('captainWithdrawalToggle').onclick=()=>{el('captainWithdrawalPanel').style.display='block';refresh()};
+ el('captainWithdrawalSubmit').onclick=async()=>{try{await rpc('requestCaptainWithdrawal',localStorage.getItem(key),el('captainWithdrawalAmount').value);alert('تم إرسال الطلب للمحاسب');await refresh()}catch(e){alert(e.message)}};
+ setInterval(refresh,60000);setTimeout(refresh,1800);
+})();
+</script>
+
 </body>
 </html>
