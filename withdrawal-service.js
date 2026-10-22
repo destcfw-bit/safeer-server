@@ -1,5 +1,5 @@
 import { db } from './db.js';
-import { maximumWithdrawal, withdrawalWindowOpen } from './withdrawal-policy.js';
+import { maximumWithdrawal } from './withdrawal-policy.js';
 const money = x => Math.round(Number(x)*1000)/1000;
 export async function ensureWithdrawalTables() {
   await db.query(`CREATE TABLE IF NOT EXISTS captain_withdrawal_settings (captain_id BIGINT PRIMARY KEY REFERENCES captains(id), classification TEXT NOT NULL DEFAULT 'consumer' CHECK(classification IN ('producer','both','consumer')), announcement_seen_at TIMESTAMPTZ);
