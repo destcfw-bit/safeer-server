@@ -2116,6 +2116,7 @@ body{overflow-x:hidden}
         </div>
         <div class="panel">
           <div class="panel-head"><div><h3>رسالة شرح تنزيل الطلب</h3><p>تُنشر تلقائيًا في القروب المحدد كل 4 ساعات، ويمكنك تعديلها أو إرسالها فورًا</p></div></div>
+          <details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details>
           <form id="groupGuideForm" class="form-grid">
             <label class="switch-row full"><input id="groupGuideEnabled" type="checkbox" checked><span><b>تشغيل الإرسال التلقائي كل 4 ساعات</b><br><small>يمكن إيقاف الجدولة مع بقاء زر الإرسال الفوري متاحًا</small></span></label>
             <div class="field full"><label>نص الرسالة</label><textarea id="groupGuideMessage" class="input group-guide-message" maxlength="4000" required></textarea><small>النظام يعتمد أول رقم في أول سطر، مثل: 5 د، 5 دنانير، 5 ورقا، أو السعر 10 دنانير.</small></div>
@@ -2144,7 +2145,6 @@ body{overflow-x:hidden}
       </section>
 <section id="view-captain-withdrawals" class="view" dir="rtl"><div id="accountantWithdrawalPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
  <button id="accountantWithdrawalClose" type="button" class="btn btn-soft">العودة للرئيسية</button><h3>💸 طلبات سحب الكباتن</h3><button id="accountantWithdrawalRefresh">تحديث الطلبات</button><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:14px 0;padding:14px;border:1px solid #8c8c8c55;border-radius:12px"><strong>🔐 التحكم اليدوي بطلبات السحب</strong><span id="withdrawalControlStatus">جارٍ التحقق...</span><button type="button" id="withdrawalControlToggle" class="btn btn-soft" disabled>تحميل الحالة...</button></div>
- <div style="margin:10px 0"><input id="withdrawalCaptainId" placeholder="رقم ID الكابتن" type="number"><select id="withdrawalClassification"><option value="producer">منتج فقط</option><option value="both">منتج ومستهلك</option><option value="consumer">مستهلك فقط</option></select><button id="withdrawalSaveClass">حفظ التصنيف</button></div>
  <div id="accountantWithdrawalList"></div>
 </div></section>
 <section id="view-weekly-participants" class="view" dir="rtl"><div id="weeklyParticipantsPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
@@ -6427,11 +6427,10 @@ window.openOldBalanceTransfer=function(){
  const el=id=>document.getElementById(id);
  const token=()=>sessionStorage.getItem('abshir_delegated_admin_token')||localStorage.getItem('abshir_accountant_token');
  const rpc=async(method,...args)=>{const r=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok||j.__rpcError||j.__error)throw Error(j.message||j.error||'تعذر الاتصال');return j};
- async function load(){try{const rows=await rpc('getAccountantWithdrawalData',token());const box=el('accountantWithdrawalList');box.replaceChildren();for(const w of rows){const div=document.createElement('div');div.style.cssText='border-bottom:1px solid #555;padding:10px 0';const label=document.createElement('div');label.textContent='#'+w.id+' — '+w.name+' — '+w.amount+' د.أ — '+w.status;div.append(label);if(w.status==='pending'||w.status==='approved'){for(const [status,text] of w.status==='pending'?[['approved','موافقة وخصم'],['rejected','رفض']]:[['transferred','تم التحويل']]){const b=document.createElement('button');b.textContent=text;b.onclick=async()=>{if(!confirm('تأكيد '+text+'؟'))return;try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message)}};div.append(b)}}box.append(div)}}catch(e){el('accountantWithdrawalList').textContent=e.message}}
+ async function load(){try{const rows=await rpc('getAccountantWithdrawalData',token());const box=el('accountantWithdrawalList');box.replaceChildren();for(const w of rows){const div=document.createElement('div');div.style.cssText='border-bottom:1px solid #555;padding:10px 0';const label=document.createElement('div');label.textContent='#'+w.id+' — '+w.name+' — '+w.amount+' د.أ — '+w.status;div.append(label);if(w.status==='pending'||w.status==='approved'){for(const [status,text] of w.status==='pending'?[['transferred','تم التحويل والخصم'],['kept','إبقاء بدون خصم']]:[['transferred','تم التحويل']]){const b=document.createElement('button');b.textContent=text;b.onclick=async()=>{if(!confirm('تأكيد '+text+'؟'))return;try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message)}};div.append(b)}}box.append(div)}}catch(e){el('accountantWithdrawalList').textContent=e.message}}
 
  el('accountantWithdrawalClose').onclick=()=>goToView('dashboard');
  el('accountantWithdrawalRefresh').onclick=load;
- el('withdrawalSaveClass').onclick=async()=>{try{await rpc('setWithdrawalClassification',token(),el('withdrawalCaptainId').value,el('withdrawalClassification').value);alert('تم حفظ التصنيف')}catch(e){alert(e.message)}};
 })();
 </script>
 
@@ -6460,5 +6459,11 @@ byId('weeklyParticipantsRefresh').onclick=load;
 })();
 </script>
 
+<script>
+(()=>{const $=id=>document.getElementById(id);const token=()=>sessionStorage.getItem('abshir_delegated_admin_token')||localStorage.getItem('abshir_accountant_token');const rpc=async(method,...args)=>{const r=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok||j.__rpcError||j.__error)throw Error(j.message||j.error||'تعذر الاتصال');return j};
+$('broadcastLoadGroups').onclick=async()=>{const select=$('broadcastGroup');select.replaceChildren(new Option('جارٍ تحميل القروبات...',''));try{const groups=await rpc('listManualBroadcastGroups',token());select.replaceChildren(new Option('اختر القروب',''));for(const g of groups)select.add(new Option(g.name,g.id));$('broadcastStatus').textContent='تم تحميل '+groups.length+' قروب'}catch(e){$('broadcastStatus').textContent=e.message}};
+$('broadcastSend').onclick=async()=>{const select=$('broadcastGroup'),group=select.value,msg=$('broadcastText').value.trim();if(!group||!msg)return alert('اختر القروب واكتب الرسالة');if(!confirm('تأكيد إرسال الرسالة إلى: '+select.selectedOptions[0].text+'؟\\n\\n'+msg.slice(0,300)))return;const b=$('broadcastSend');b.disabled=true;try{await rpc('sendManualBroadcast',token(),group,msg);$('broadcastStatus').textContent='✅ تم قبول إرسال الرسالة للقروب';$('broadcastText').value=''}catch(e){$('broadcastStatus').textContent='❌ '+e.message}finally{b.disabled=false}};
+})();
+</script>
 </body>
 </html>

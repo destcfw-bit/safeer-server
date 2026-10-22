@@ -6,10 +6,10 @@ export function withdrawalWindowOpen(date = new Date()) {
 export function maximumWithdrawal(balance, classification) {
   const amount = Number(balance);
   if (!Number.isFinite(amount) || amount <= 1) return 0;
-  const type = String(classification || '').trim().toLowerCase();
+  const type = String(classification || '').trim().toLowerCase().replace(/\s*\+\s*/g, '+').replace(/\s+/g, ' ');
   let max = 0;
   if (['producer', 'producer_only', 'منتج', 'منتج فقط'].includes(type)) max = amount - 1;
-  else if (['both', 'producer_consumer', 'producer_and_consumer', 'منتج ومستهلك', 'منتج+مستهلك'].includes(type)) max = amount * 0.5 - 1;
+  else if (['both', 'producer_consumer', 'producer_and_consumer', 'منتج ومستهلك', 'منتج+مستهلك', 'producer+consumer', 'producer & consumer', 'producer-consumer'].includes(type)) max = amount * 0.5 - 1;
   return Math.max(0, Math.floor((max + Number.EPSILON) * 1000) / 1000);
 }
 export function validateWithdrawalRequest({ balance, classification, requestedAmount, now = new Date() }) {
