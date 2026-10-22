@@ -1774,7 +1774,7 @@ export async function listLedger(captainId, limit=100) {
 }
 
 const AMMAN_TIME_ZONE = "Asia/Amman";
-const WEEKLY_FLOOR_AMOUNT = 1.5;
+const WEEKLY_FLOOR_AMOUNT = 1;
 
 function ammanDateParts(date = new Date()) {
   const fmt = new Intl.DateTimeFormat("en-CA", {
