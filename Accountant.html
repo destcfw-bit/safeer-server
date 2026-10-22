@@ -1457,6 +1457,7 @@ body{overflow-x:hidden}
         <div class="nav-section-label">الأدوات المتقدمة</div>
         <details class="nav-group">
           <summary><span>⚙</span> الإعدادات والإدارة</summary>
+          <button type="button" data-view="manual-broadcast" onclick="switchView('manual-broadcast',this);document.getElementById('broadcastLoadGroups').click()"><span>📣</span> إرسال رسالة واتساب</button>
           <button data-view="maintenance" onclick="switchView('maintenance',this)"><span>🛠</span> صيانة موقع الكباتن</button>
           <button data-view="unregistered" onclick="switchView('unregistered',this)"><span>⛔</span> أرقام غير مسجلة <b id="navUnregisteredBadge" class="nav-count hidden">0</b></button>
           <button data-view="imported-login-repair" onclick="switchView('imported-login-repair',this)"><span>🔑</span> إصلاح دخول المستوردين</button>
@@ -1487,6 +1488,7 @@ body{overflow-x:hidden}
         </div>
       </header>
 
+      <section id="view-manual-broadcast" class="view" dir="rtl"><div class="panel"><div class="panel-head"><h3>📣 إرسال رسالة لقروب واتساب</h3></div><details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details></div></section>
       <section id="view-dashboard" class="view active">
         <div class="dashboard-hero">
           <div class="hero-copy">
@@ -2116,7 +2118,7 @@ body{overflow-x:hidden}
         </div>
         <div class="panel">
           <div class="panel-head"><div><h3>رسالة شرح تنزيل الطلب</h3><p>تُنشر تلقائيًا في القروب المحدد كل 4 ساعات، ويمكنك تعديلها أو إرسالها فورًا</p></div></div>
-          <details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details>
+          
           <form id="groupGuideForm" class="form-grid">
             <label class="switch-row full"><input id="groupGuideEnabled" type="checkbox" checked><span><b>تشغيل الإرسال التلقائي كل 4 ساعات</b><br><small>يمكن إيقاف الجدولة مع بقاء زر الإرسال الفوري متاحًا</small></span></label>
             <div class="field full"><label>نص الرسالة</label><textarea id="groupGuideMessage" class="input group-guide-message" maxlength="4000" required></textarea><small>النظام يعتمد أول رقم في أول سطر، مثل: 5 د، 5 دنانير، 5 ورقا، أو السعر 10 دنانير.</small></div>
@@ -2143,9 +2145,20 @@ body{overflow-x:hidden}
           <div id="cancelledOrdersTable"></div>
         </div>
       </section>
+<style>
+.withdraw-class-manager{margin:18px 0;padding:16px;border:1px solid var(--admin-border,#c8a65b55);border-radius:16px;background:var(--admin-surface,#172431);color:inherit}
+.withdraw-class-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.withdraw-class-head h3{margin:0 0 5px;font-size:17px}.withdraw-class-head p{margin:0;opacity:.8;font-size:13px}
+#withdrawalClassBody{margin-top:16px}#withdrawalClassBody[hidden],#adminCliqBody[hidden]{display:none!important}
+#withdrawalClassBody input,#withdrawalClassBody select,#adminCliqBody input{margin:5px;padding:10px;border-radius:10px;max-width:100%;border:1px solid var(--admin-border,#c8a65b55);background:var(--admin-bg,#172431);color:inherit}
+#withdrawalClassCounts{margin:12px 0;font-size:13px;line-height:2}.withdraw-class-rows{max-height:320px;overflow:auto;border:1px solid var(--admin-border,#c8a65b55);border-radius:12px}
+#accountantWithdrawalList{margin-top:20px}#view-captain-withdrawals .panel{box-sizing:border-box;max-width:100%;overflow-x:hidden!important}
+</style>
 <section id="view-captain-withdrawals" class="view" dir="rtl"><div id="accountantWithdrawalPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
  <button id="accountantWithdrawalClose" type="button" class="btn btn-soft">العودة للرئيسية</button><h3>💸 طلبات سحب الكباتن</h3><button id="accountantWithdrawalRefresh">تحديث الطلبات</button><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:14px 0;padding:14px;border:1px solid #8c8c8c55;border-radius:12px"><strong>🔐 التحكم اليدوي بطلبات السحب</strong><span id="withdrawalControlStatus">جارٍ التحقق...</span><button type="button" id="withdrawalControlToggle" class="btn btn-soft" disabled>تحميل الحالة...</button></div>
- <div id="accountantWithdrawalList"></div>
+
+ <div class="withdraw-class-manager"><div class="withdraw-class-head"><div><h3>🏦 تعديل بيانات كليك للكابتن</h3><p>للإدارة الرئيسية فقط — ابحث عن الكابتن بالاسم أو رقم الهاتف.</p></div><button type="button" id="adminCliqExpand" class="btn btn-soft" aria-expanded="false" aria-controls="adminCliqBody">📂 فتح تعديل كليك ▾</button></div><div id="adminCliqBody" hidden><div style="position:relative;margin:12px 0"><input id="adminCliqSearch" autocomplete="off" placeholder="🔎 اسم الكابتن أو رقم الهاتف" style="width:100%;box-sizing:border-box"><div id="adminCliqMatches" class="withdraw-class-rows" style="max-height:180px;display:none"></div></div><p id="adminCliqSelected" style="font-size:13px">لم يتم اختيار كابتن</p><input id="adminCliqCaptainId" type="hidden"><input id="adminCliqBank" maxlength="100" placeholder="اسم البنك"><input id="adminCliqAlias" maxlength="50" dir="ltr" placeholder="معرّف كليك"><button type="button" id="adminCliqUpdate" class="btn btn-primary">🔒 تحديث بيانات كليك</button></div></div>
+ <div id="withdrawalClassManager" class="withdraw-class-manager"><div class="withdraw-class-head"><div><h3>👥 تصنيفات الكباتن الأسبوعية</h3><p>تصنيف تلقائي حسب الإنتاج والاستهلاك خلال الأسبوع الحالي.</p></div><button id="withdrawalClassExpand" type="button" class="btn btn-soft" aria-expanded="false" aria-controls="withdrawalClassBody">📂 عرض الكباتن ▾</button></div><div id="withdrawalClassBody" hidden><input id="withdrawalClassSearch" placeholder="بحث بالاسم أو الرقم"><select id="withdrawalClassFilter"><option value="all">الجميع</option><option value="producer">منتج فقط</option><option value="both">منتج + مستهلك</option><option value="consumer">مستهلك فقط</option><option value="unclassified">غير نشط</option></select><button id="withdrawalClassRefresh" type="button">🔄 تحديث التصنيفات</button><div id="withdrawalClassCounts"></div><div id="withdrawalClassRows" class="withdraw-class-rows"></div></div></div><div id="accountantWithdrawalList"></div>
 </div></section>
 <section id="view-weekly-participants" class="view" dir="rtl"><div id="weeklyParticipantsPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
   <div style="display:flex;justify-content:space-between;align-items:center"><strong>📊 المتفاعلون على الطلبات</strong><button id="weeklyParticipantsClose" type="button" class="btn btn-soft">العودة للرئيسية</button></div>
@@ -6427,10 +6440,62 @@ window.openOldBalanceTransfer=function(){
  const el=id=>document.getElementById(id);
  const token=()=>sessionStorage.getItem('abshir_delegated_admin_token')||localStorage.getItem('abshir_accountant_token');
  const rpc=async(method,...args)=>{const r=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok||j.__rpcError||j.__error)throw Error(j.message||j.error||'تعذر الاتصال');return j};
- async function load(){try{const rows=await rpc('getAccountantWithdrawalData',token());const box=el('accountantWithdrawalList');box.replaceChildren();for(const w of rows){const div=document.createElement('div');div.style.cssText='border-bottom:1px solid #555;padding:10px 0';const label=document.createElement('div');label.textContent='#'+w.id+' — '+w.name+' — '+w.amount+' د.أ — '+w.status;div.append(label);if(w.status==='pending'||w.status==='approved'){for(const [status,text] of w.status==='pending'?[['transferred','تم التحويل والخصم'],['kept','إبقاء بدون خصم']]:[['transferred','تم التحويل']]){const b=document.createElement('button');b.textContent=text;b.onclick=async()=>{if(!confirm('تأكيد '+text+'؟'))return;try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message)}};div.append(b)}}box.append(div)}}catch(e){el('accountantWithdrawalList').textContent=e.message}}
+
+
+ let classRows=[];
+ const classLabels={producer:'🟢 منتج فقط',both:'🟡 منتج + مستهلك',consumer:'🔴 مستهلك فقط',unclassified:'⚪ غير نشط'};
+ function renderClasses(){const q=el('withdrawalClassSearch').value.trim().toLowerCase(),f=el('withdrawalClassFilter').value;const visible=classRows.filter(c=>(f==='all'||c.classification===f)&&(!q||(c.name+' '+c.phone+' '+c.id).toLowerCase().includes(q)));const box=el('withdrawalClassRows');box.replaceChildren();el('withdrawalClassCounts').textContent='إجمالي الكباتن: '+classRows.length+' | '+Object.entries(classLabels).map(([k,v])=>v+': '+classRows.filter(c=>c.classification===k).length).join(' | ');for(const c of visible){const div=document.createElement('div');div.style.cssText='padding:12px 14px;border-bottom:1px solid #7773;line-height:1.7';div.textContent=c.name+' — '+c.phone+' (#'+c.id+') — '+(classLabels[c.classification]||c.classification);box.append(div)}}
+ async function loadClasses(){try{classRows=await rpc('listWithdrawalClassifications',token());renderClasses()}catch(e){el('withdrawalClassCounts').textContent=e.message}}
+ el('withdrawalClassExpand').onclick=()=>{const body=el('withdrawalClassBody'),open=body.hidden;body.hidden=!open;el('withdrawalClassExpand').setAttribute('aria-expanded',String(open));el('withdrawalClassExpand').textContent=open?'📁 إخفاء الكباتن ▴':'📂 عرض الكباتن ▾';if(open)loadClasses()};
+ el('withdrawalClassSearch').oninput=renderClasses;el('withdrawalClassFilter').onchange=renderClasses;el('withdrawalClassRefresh').onclick=loadClasses;setTimeout(loadClasses,1500);
+ let withdrawalTab='pending';
+ async function load(){
+  const box=el('accountantWithdrawalList');
+  try{
+   const rows=await rpc('getAccountantWithdrawalData',token());
+   box.replaceChildren();
+   const tabs=document.createElement('div');tabs.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:12px 0';
+   for(const [key,label] of [['pending','⏳ المعلّقة'],['transferred','✅ تم التحويل'],['kept','📁 إبقاء']]){
+    const button=document.createElement('button');button.type='button';button.className='btn '+(withdrawalTab===key?'btn-primary':'btn-soft');
+    button.textContent=label+' ('+rows.filter(w=>key==='pending'?['pending','approved'].includes(w.status):w.status===key).length+')';
+    button.onclick=()=>{withdrawalTab=key;load()};tabs.append(button);
+   }
+   box.append(tabs);
+   const visible=rows.filter(w=>withdrawalTab==='pending'?['pending','approved'].includes(w.status):w.status===withdrawalTab);
+   if(!visible.length){const empty=document.createElement('p');empty.textContent='لا توجد طلبات في هذا القسم';box.append(empty)}
+   for(const w of visible){
+    const div=document.createElement('article');div.className='withdraw-request-card';
+    const head=document.createElement('div');head.className='withdraw-request-head';
+    const who=document.createElement('div');const name=document.createElement('strong');name.textContent=w.name||'كابتن';const id=document.createElement('small');id.textContent='طلب #'+w.id+' • '+(w.phone||'');who.append(name,id);
+    const amount=document.createElement('strong');amount.className='withdraw-request-amount';amount.textContent=Number(w.amount).toFixed(3)+' د.أ';head.append(who,amount);div.append(head);
+    const details=document.createElement('div');details.className='withdraw-request-details';
+    function detail(title,value,copy){const item=document.createElement('div');item.className='withdraw-request-detail';const t=document.createElement('small');t.textContent=title;const v=document.createElement('b');v.textContent=value||'غير محدد';item.append(t,v);if(copy&&value){const btn=document.createElement('button');btn.type='button';btn.className='btn btn-soft withdraw-copy';btn.textContent='📋 نسخ الاسم';btn.title='نسخ معرّف كليك فقط، بدون اسم البنك';btn.onclick=async()=>{try{await navigator.clipboard.writeText(String(value));btn.textContent='✅ تم النسخ';setTimeout(()=>btn.textContent='📋 نسخ الاسم',1800)}catch(e){alert('تعذر النسخ: '+e.message)}};item.append(btn)}details.append(item)}
+    detail('🏦 البنك',w.bank_name);detail('💳 اسم / معرّف كليك',w.cliq_alias,true);div.append(details);
+    const meta=document.createElement('div');meta.className='withdraw-request-meta';meta.textContent='📅 الطلب: '+new Date(w.created_at).toLocaleString('ar-JO')+(w.reviewed_at?' • المراجعة: '+new Date(w.reviewed_at).toLocaleString('ar-JO'):'')+(w.note?' • '+w.note:'');div.append(meta);
+    if(withdrawalTab==='pending'){
+     const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-top:14px';
+     for(const [status,title] of [['transferred','✅ تم التحويل'],['kept','📁 إبقاء']]){
+      if(w.status==='approved'&&status==='kept')continue;
+      const button=document.createElement('button');button.type='button';button.className='btn '+(status==='transferred'?'btn-primary':'btn-soft');button.textContent=title;
+      button.onclick=async()=>{
+       const message=status==='transferred'?'تأكيد التحويل وخصم '+w.amount+' د.أ من رصيد '+w.name+'؟':'تأكيد إبقاء المبلغ في رصيد '+w.name+' وإغلاق الطلب بدون خصم؟';
+       if(!confirm(message))return;button.disabled=true;
+       try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message);button.disabled=false}
+      };actions.append(button);
+     }div.append(actions);
+    }box.append(div);
+   }
+  }catch(e){box.textContent=e.message}
+ }
 
  el('accountantWithdrawalClose').onclick=()=>goToView('dashboard');
- el('accountantWithdrawalRefresh').onclick=load;
+ async function loadControl(){try{const data=await rpc('getWithdrawalControl',token());const b=el('withdrawalControlToggle');b.disabled=false;b.textContent=data.enabled?'🔒 إغلاق استقبال السحب':'🔓 فتح استقبال السحب';el('withdrawalControlStatus').textContent=data.enabled?'🟢 مفتوح':'🔴 مغلق'}catch(e){el('withdrawalControlStatus').textContent=e.message}}
+ el('withdrawalControlToggle').onclick=async()=>{try{const data=await rpc('getWithdrawalControl',token());if(!confirm(data.enabled?'إغلاق طلبات السحب لجميع الكباتن؟':'فتح طلبات السحب لجميع الكباتن؟'))return;await rpc('setWithdrawalControl',token(),!data.enabled);await loadControl()}catch(e){alert(e.message)}};
+ let cliqCaptains=[];
+ el('adminCliqExpand').onclick=async()=>{const body=el('adminCliqBody'),open=body.hidden;body.hidden=!open;el('adminCliqExpand').setAttribute('aria-expanded',String(open));el('adminCliqExpand').textContent=open?'📁 إغلاق تعديل كليك ▴':'📂 فتح تعديل كليك ▾';if(open&&!cliqCaptains.length){try{cliqCaptains=await rpc('listWithdrawalClassifications',token())}catch(e){el('adminCliqSelected').textContent=e.message}}};
+ el('adminCliqSearch').oninput=()=>{el('adminCliqCaptainId').value='';el('adminCliqSelected').textContent='اختر كابتن من نتائج البحث';const q=el('adminCliqSearch').value.trim().toLowerCase(),box=el('adminCliqMatches');box.replaceChildren();if(q.length<2){box.style.display='none';return}const matches=cliqCaptains.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(q)).slice(0,30);box.style.display='block';for(const c of matches){const b=document.createElement('button');b.type='button';b.className='btn btn-soft';b.style.cssText='display:block;width:100%;text-align:right;margin:3px 0';b.textContent=c.name+' — '+c.phone;b.onclick=()=>{el('adminCliqCaptainId').value=c.id;el('adminCliqSearch').value=c.name+' — '+c.phone;el('adminCliqSelected').textContent='✅ الكابتن المحدد: '+c.name+' ('+c.phone+')';box.style.display='none'};box.append(b)}if(!matches.length)box.textContent='لا يوجد كابتن مطابق'};
+ el('adminCliqUpdate').onclick=async()=>{const id=el('adminCliqCaptainId').value,bank=el('adminCliqBank').value.trim(),alias=el('adminCliqAlias').value.trim();if(!id||!bank||!alias){alert('اختر الكابتن من البحث وأكمل البنك ومعرّف كليك');return}if(!confirm('تأكيد تعديل بيانات كليك للكابتن '+id+'؟'))return;try{await rpc('adminUpdateCaptainCliq',token(),id,bank,alias);alert('تم تحديث بيانات كليك');await load()}catch(e){alert(e.message)}};
+ el('accountantWithdrawalRefresh').onclick=()=>{load();loadControl()};setTimeout(loadControl,1000);
 })();
 </script>
 
