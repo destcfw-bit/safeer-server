@@ -1794,7 +1794,7 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
  border-left-color:#9e824f!important;
 }
 </style>
-<link rel="icon" type="image/svg+xml" href="/assets/safeer-logo.svg"><style id="safeer-brand-override">:root{--gold:#E99A22;--red:#0B2341;--primary:#0B2341;--accent:#E99A22}body{accent-color:#E99A22}button.primary,.btn-primary{background:#0B2341!important;color:#fff!important}.brand-logo{content:url("/assets/safeer-logo.svg")!important}</style></head>
+<link rel="icon" type="image/svg+xml" href="/assets/safeer-logo.svg"><style id="safeer-brand-override">:root{--gold:#E99A22;--red:#0B2341;--primary:#0B2341;--accent:#E99A22}body{accent-color:#E99A22}button.primary,.btn-primary{background:#0B2341!important;color:#fff!important}.brand-logo{content:url("/assets/safeer-logo.svg")!important}</style><style>.withdrawal-balance-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.withdrawal-balance-actions .btn{position:static!important;min-height:42px;border-radius:12px;padding:10px 16px!important}.withdrawal-balance-actions #captainWithdrawalToggle{background:#d7ad54;color:#192330;border:1px solid #e4c57e}@media(max-width:500px){.withdrawal-balance-actions .btn{flex:1;min-width:130px}}</style></head>
 <style id="safeer-login-luxe">
 #loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
 #loginScreen.login-shell.hidden{display:none!important}
@@ -1910,7 +1910,7 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
                 <p>يتحدث تلقائياً مع كل حركة جديدة</p>
                 <div id="classificationBadge" class="captain-classification">⏳ جاري تحديد تصنيف الأسبوع</div>
               </div>
-              <button class="btn v84-balance-action" onclick="openDetailedStatement()">عرض التفاصيل ←</button>
+              <div class="withdrawal-balance-actions"><button class="btn v84-balance-action" onclick="openDetailedStatement()">عرض التفاصيل ←</button><button id="captainWithdrawalToggle" class="btn v84-balance-action" type="button" style="display:none">💸 طلب سحب الرصيد</button></div>
             </div>
           </article>
         </div>
@@ -3307,7 +3307,7 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
   <button id="captainWithdrawalSubmit" style="padding:9px;background:#c8a65b;color:#111;border:0;border-radius:8px">إرسال طلب السحب</button>
   <div id="captainWithdrawalHistory" style="font-size:12px;max-height:130px;overflow:auto"></div>
 </section>
-<button id="captainWithdrawalToggle" style="display:none;position:fixed;bottom:18px;left:18px;z-index:9400;border:0;border-radius:40px;background:#c8a65b;color:#111;padding:13px;font-weight:bold">💸 طلب سحب</button>
+
 <script>
 (function(){
  const el=id=>document.getElementById(id), key='abshir_captain_token';
