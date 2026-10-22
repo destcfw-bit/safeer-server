@@ -6357,5 +6357,25 @@ window.openOldBalanceTransfer=function(){
   };
 })();
 </script>
+
+<section id="accountantWithdrawalPanel" style="position:fixed;bottom:18px;left:18px;z-index:9500;width:min(570px,calc(100% - 36px));max-height:75vh;overflow:auto;display:none;background:#14202b;color:white;border:1px solid #c8a65b;border-radius:15px;padding:18px" dir="rtl">
+ <button id="accountantWithdrawalClose">إغلاق ×</button><h3>💸 طلبات سحب الكباتن</h3><button id="accountantWithdrawalRefresh">تحديث الطلبات</button>
+ <div style="margin:10px 0"><input id="withdrawalCaptainId" placeholder="رقم ID الكابتن" type="number"><select id="withdrawalClassification"><option value="producer">منتج فقط</option><option value="both">منتج ومستهلك</option><option value="consumer">مستهلك فقط</option></select><button id="withdrawalSaveClass">حفظ التصنيف</button></div>
+ <div id="accountantWithdrawalList"></div>
+</section>
+<button id="accountantWithdrawalToggle" style="position:fixed;bottom:18px;left:18px;z-index:9400;border:0;border-radius:40px;background:#c8a65b;color:#111;padding:13px;font-weight:bold">💸 طلبات السحب</button>
+<script>
+(function(){
+ const el=id=>document.getElementById(id);
+ const token=()=>sessionStorage.getItem('abshir_delegated_admin_token')||localStorage.getItem('abshir_accountant_token');
+ const rpc=async(method,...args)=>{const r=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok||j.__rpcError||j.__error)throw Error(j.message||j.error||'تعذر الاتصال');return j};
+ async function load(){try{const rows=await rpc('getAccountantWithdrawalData',token());const box=el('accountantWithdrawalList');box.replaceChildren();for(const w of rows){const div=document.createElement('div');div.style.cssText='border-bottom:1px solid #555;padding:10px 0';const label=document.createElement('div');label.textContent='#'+w.id+' — '+w.name+' — '+w.amount+' د.أ — '+w.status;div.append(label);if(w.status==='pending'||w.status==='approved'){for(const [status,text] of w.status==='pending'?[['approved','موافقة وخصم'],['rejected','رفض']]:[['transferred','تم التحويل']]){const b=document.createElement('button');b.textContent=text;b.onclick=async()=>{if(!confirm('تأكيد '+text+'؟'))return;try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message)}};div.append(b)}}box.append(div)}}catch(e){el('accountantWithdrawalList').textContent=e.message}}
+ el('accountantWithdrawalToggle').onclick=()=>{el('accountantWithdrawalPanel').style.display='block';load()};
+ el('accountantWithdrawalClose').onclick=()=>el('accountantWithdrawalPanel').style.display='none';
+ el('accountantWithdrawalRefresh').onclick=load;
+ el('withdrawalSaveClass').onclick=async()=>{try{await rpc('setWithdrawalClassification',token(),el('withdrawalCaptainId').value,el('withdrawalClassification').value);alert('تم حفظ التصنيف')}catch(e){alert(e.message)}};
+})();
+</script>
+
 </body>
 </html>

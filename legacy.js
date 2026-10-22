@@ -1,3 +1,4 @@
+import { captainWithdrawalData, requestCaptainWithdrawal, accountantWithdrawalData, setWithdrawalClassification, markWithdrawalAnnouncementSeen, reviewWithdrawal } from './withdrawal-service.js';
 
 import bcrypt from "bcryptjs";
 import * as XLSX from "xlsx";
@@ -1258,6 +1259,13 @@ export function makeLegacyRpc(app){
       }
     }
     switch(method){
+      case "getCaptainWithdrawalData": { const me=await verify(args[0],["captain"]); return captainWithdrawalData(me.captainId); }
+      case "requestCaptainWithdrawal": { const me=await verify(args[0],["captain"]); return requestCaptainWithdrawal(me.captainId,args[1]); }
+      case "markWithdrawalAnnouncementSeen": { const me=await verify(args[0],["captain"]); return markWithdrawalAnnouncementSeen(me.captainId); }
+      case "getAccountantWithdrawalData": { await verify(args[0],["admin","accountant"]); return accountantWithdrawalData(); }
+      case "setWithdrawalClassification": { const me=await verify(args[0],["admin"]); if(me.delegated)throw Error("غير مصرح"); return setWithdrawalClassification(args[1],args[2]); }
+      case "reviewCaptainWithdrawal": { const me=await verify(args[0],["admin","accountant"]); return reviewWithdrawal(args[1],args[2],me.sub,args[3]); }
+
       case "getCaptainSiteMaintenanceStatus":
         return {ok:true,maintenance:await getCaptainSiteMaintenanceState()};
       case "loginAccountant": return login(args[0],args[1],false);
