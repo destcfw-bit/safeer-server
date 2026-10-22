@@ -1,0 +1,27 @@
+name: Withdrawal checks
+on:
+  push:
+    paths:
+      - 'withdrawal-*.js'
+      - 'legacy.js'
+      - 'Captain.html'
+      - 'Accountant.html'
+      - '.github/workflows/withdrawal-checks.yml'
+  pull_request:
+    paths:
+      - 'withdrawal-*.js'
+      - 'legacy.js'
+      - 'Captain.html'
+      - 'Accountant.html'
+      - '.github/workflows/withdrawal-checks.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --check withdrawal-service.js && node --check legacy.js && node --check server.js
+      - run: node --test withdrawal-policy.test.js
