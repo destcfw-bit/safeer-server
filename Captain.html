@@ -3301,6 +3301,16 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
 
 \n
 
+<style>
+.captain-withdraw-page{position:fixed!important;inset:0!important;z-index:99990!important;overflow:auto!important;background:radial-gradient(circle at 90% 0%,#243748,#0b121b 48%)!important;color:#f7f8fa!important;padding:clamp(14px,3vw,38px)!important}
+.withdraw-page-shell{max-width:1140px;margin:auto}.withdraw-page-header{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:24px}.withdraw-page-header h2{font-size:clamp(25px,3vw,39px);margin:6px 0}
+.withdraw-page-header p,.withdraw-page-card p{color:#b7c0ca}.withdraw-page-header button{background:#242a33;color:white;border:1px solid #c8a65b;border-radius:12px;padding:12px 18px}
+.withdraw-page-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.withdraw-page-card{background:linear-gradient(145deg,#1b2a37,#0c1520);border:1px solid #c8a65b77;border-radius:22px;padding:clamp(18px,3vw,30px);margin-bottom:20px;box-shadow:0 18px 42px #0005}
+.withdraw-page-card h3{margin:0 0 18px}.withdraw-page-card strong{font-size:28px}.withdraw-page-card input{display:block;width:100%;box-sizing:border-box;margin:9px 0 16px;padding:13px;background:#101b27;color:#fff;border:1px solid #c8a65b77;border-radius:12px}
+.withdraw-page-card button{padding:12px 18px;background:#c8a65b;color:#111;border:0;border-radius:12px;cursor:pointer;font-weight:700}.withdraw-page-card button:disabled{opacity:.45;cursor:not-allowed}
+#captainCliqSaved{padding:20px;border-radius:14px;background:#162c29;color:#a7f2be;overflow-wrap:anywhere}.withdraw-history-item{padding:13px 4px;border-bottom:1px solid #ffffff24;overflow-wrap:anywhere}
+@media(max-width:720px){.withdraw-page-grid{grid-template-columns:1fr}.withdraw-page-header{align-items:flex-start}.withdraw-page-header button{flex-shrink:0}}
+</style>
 <section id="captainWithdrawalPanel" class="captain-withdraw-page" dir="rtl" style="display:none">
  <div class="withdraw-page-shell"><header class="withdraw-page-header"><div><small>السفير • الخدمات المالية</small><h2>💸 طلب سحب الرصيد</h2><p>راجع رصيدك وبيانات التحويل قبل إرسال الطلب للإدارة.</p></div><button type="button" id="captainWithdrawalClose" aria-label="إغلاق صفحة السحب">✕ إغلاق</button></header>
  <div class="withdraw-page-grid"><div class="withdraw-page-card"><h3>💰 الرصيد المتاح</h3><strong id="captainWithdrawalAvailable">—</strong><p id="captainWithdrawalInfo">جارٍ تحميل بيانات السحب...</p><label for="captainWithdrawalAmount">المبلغ المطلوب (د.أ)</label><input id="captainWithdrawalAmount" type="number" min="0.001" step="0.001" placeholder="أدخل المبلغ"><button id="captainWithdrawalSubmit" type="button">إرسال طلب السحب ←</button></div>
