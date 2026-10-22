@@ -10,7 +10,7 @@ import { runStorageCleanup } from "./storage.js";
 
 const DEFAULT_GUIDE=`📌 *طريقة تنزيل الطلب في القروب*\n\n1️⃣ ضع السعر بوضوح.\n2️⃣ أي طلب مكتوب بدون كلمة أوردر يُحسب راكب؛ وإذا كُتبت أوردر يُحسب أوردر، وراكب + أوردر مدعوم.\n3️⃣ للاستلام: رد بأي كلمة ثم يضع صاحب الطلب 👍 على الرد.\n\n*أبشر فزعة الشمال الكبرى*`;
 const COMM={PASSENGER:.75,ORDER:1};
-const FLOOR=1.5,RESERVE=1.5;
+const FLOOR=1,RESERVE=1.5;
 function n(v){const x=Number(v);return Number.isFinite(x)?x:0}
 function money(v){return Number(n(v).toFixed(3))}
 function normPhone(v){let d=String(v||"").replace(/\D/g,"");if(d.startsWith("00962"))d=d.slice(2);if(d.startsWith("962"))d=d.slice(3);if(d.startsWith("0"))d=d.slice(1);return d}
@@ -3157,8 +3157,8 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
         // Guard 2: deterministic reference + DB unique index protects concurrent/replayed ticks.
         await createMovement({
           captainId:c.id,kind:"weekly_deduction",amount:FLOOR,
-          referenceType:"weekly_floor_thursday_21",referenceId:`${end}:${c.id}:thu21:150`,
-          description:`أرضية أسبوعية 1.50 د.أ — الخميس 9:00 مساءً — الأسبوع ${end}`,
+          referenceType:"weekly_floor_thursday_21",referenceId:`${end}:${c.id}:thu21:100`,
+          description:`أرضية أسبوعية 1.00 د.أ — الخميس 9:00 مساءً — الأسبوع ${end}`,
           metadata:{type:"WEEKLY_FLOOR",weekStart:start,weekEnd:end,source:"THURSDAY_21_SCHEDULER",scheduledAt:scheduledAt.toISOString(),amount:FLOOR,catchup:Boolean(catchup)},
           createdBy:createdBy||null,occurredAt:scheduledAt.toISOString()
         });
