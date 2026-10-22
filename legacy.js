@@ -1,3 +1,4 @@
+import { weeklyParticipantsReport } from './weekly-participants.js';
 import { captainWithdrawalData, requestCaptainWithdrawal, accountantWithdrawalData, setWithdrawalClassification, markWithdrawalAnnouncementSeen, reviewWithdrawal } from './withdrawal-service.js';
 
 import bcrypt from "bcryptjs";
@@ -1259,6 +1260,7 @@ export function makeLegacyRpc(app){
       }
     }
     switch(method){
+      case "getWeeklyParticipantsReport": { await verify(args[0],["admin","accountant"]); return weeklyParticipantsReport(); }
       case "getCaptainWithdrawalData": { const me=await verify(args[0],["captain"]); return captainWithdrawalData(me.captainId); }
       case "requestCaptainWithdrawal": { const me=await verify(args[0],["captain"]); return requestCaptainWithdrawal(me.captainId,args[1]); }
       case "markWithdrawalAnnouncementSeen": { const me=await verify(args[0],["captain"]); return markWithdrawalAnnouncementSeen(me.captainId); }
