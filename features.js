@@ -3491,7 +3491,7 @@ export async function recoverOutageWindow(payload,enqueue,userId=null,onProgress
     if(String(md.typeMessage||'')==='reactionMessage'){
       reactionEvents++;
       const emoji=reactionEmoji(md);
-      if(emoji==='👍')likesFound++;
+      if(isCommissionLike(emoji))likesFound++;
       else if(!emoji)likeRemovalsFound++;
       else if(partialEmojiQuantity(emoji))partialReactionsFound++;
       else if(emoji==='🚫')fullCancelsFound++;
