@@ -2116,6 +2116,7 @@ body{overflow-x:hidden}
         </div>
         <div class="panel">
           <div class="panel-head"><div><h3>رسالة شرح تنزيل الطلب</h3><p>تُنشر تلقائيًا في القروب المحدد كل 4 ساعات، ويمكنك تعديلها أو إرسالها فورًا</p></div></div>
+          <details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details>
           <form id="groupGuideForm" class="form-grid">
             <label class="switch-row full"><input id="groupGuideEnabled" type="checkbox" checked><span><b>تشغيل الإرسال التلقائي كل 4 ساعات</b><br><small>يمكن إيقاف الجدولة مع بقاء زر الإرسال الفوري متاحًا</small></span></label>
             <div class="field full"><label>نص الرسالة</label><textarea id="groupGuideMessage" class="input group-guide-message" maxlength="4000" required></textarea><small>النظام يعتمد أول رقم في أول سطر، مثل: 5 د، 5 دنانير، 5 ورقا، أو السعر 10 دنانير.</small></div>
@@ -6460,5 +6461,11 @@ byId('weeklyParticipantsRefresh').onclick=load;
 })();
 </script>
 
+<script>
+(()=>{const $=id=>document.getElementById(id);const token=()=>sessionStorage.getItem('abshir_delegated_admin_token')||localStorage.getItem('abshir_accountant_token');const rpc=async(method,...args)=>{const r=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok||j.__rpcError||j.__error)throw Error(j.message||j.error||'تعذر الاتصال');return j};
+$('broadcastLoadGroups').onclick=async()=>{const select=$('broadcastGroup');select.replaceChildren(new Option('جارٍ تحميل القروبات...',''));try{const groups=await rpc('listManualBroadcastGroups',token());select.replaceChildren(new Option('اختر القروب',''));for(const g of groups)select.add(new Option(g.name,g.id));$('broadcastStatus').textContent='تم تحميل '+groups.length+' قروب'}catch(e){$('broadcastStatus').textContent=e.message}};
+$('broadcastSend').onclick=async()=>{const select=$('broadcastGroup'),group=select.value,msg=$('broadcastText').value.trim();if(!group||!msg)return alert('اختر القروب واكتب الرسالة');if(!confirm('تأكيد إرسال الرسالة إلى: '+select.selectedOptions[0].text+'؟\\n\\n'+msg.slice(0,300)))return;const b=$('broadcastSend');b.disabled=true;try{await rpc('sendManualBroadcast',token(),group,msg);$('broadcastStatus').textContent='✅ تم قبول إرسال الرسالة للقروب';$('broadcastText').value=''}catch(e){$('broadcastStatus').textContent='❌ '+e.message}finally{b.disabled=false}};
+})();
+</script>
 </body>
 </html>
