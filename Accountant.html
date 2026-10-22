@@ -1457,6 +1457,7 @@ body{overflow-x:hidden}
         <div class="nav-section-label">الأدوات المتقدمة</div>
         <details class="nav-group">
           <summary><span>⚙</span> الإعدادات والإدارة</summary>
+          <button type="button" data-view="manual-broadcast" onclick="switchView('manual-broadcast',this);document.getElementById('broadcastLoadGroups').click()"><span>📣</span> إرسال رسالة واتساب</button>
           <button data-view="maintenance" onclick="switchView('maintenance',this)"><span>🛠</span> صيانة موقع الكباتن</button>
           <button data-view="unregistered" onclick="switchView('unregistered',this)"><span>⛔</span> أرقام غير مسجلة <b id="navUnregisteredBadge" class="nav-count hidden">0</b></button>
           <button data-view="imported-login-repair" onclick="switchView('imported-login-repair',this)"><span>🔑</span> إصلاح دخول المستوردين</button>
@@ -1487,6 +1488,7 @@ body{overflow-x:hidden}
         </div>
       </header>
 
+      <section id="view-manual-broadcast" class="view" dir="rtl"><div class="panel"><div class="panel-head"><h3>📣 إرسال رسالة لقروب واتساب</h3></div><details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details></div></section>
       <section id="view-dashboard" class="view active">
         <div class="dashboard-hero">
           <div class="hero-copy">
@@ -2116,7 +2118,7 @@ body{overflow-x:hidden}
         </div>
         <div class="panel">
           <div class="panel-head"><div><h3>رسالة شرح تنزيل الطلب</h3><p>تُنشر تلقائيًا في القروب المحدد كل 4 ساعات، ويمكنك تعديلها أو إرسالها فورًا</p></div></div>
-          <details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details>
+          
           <form id="groupGuideForm" class="form-grid">
             <label class="switch-row full"><input id="groupGuideEnabled" type="checkbox" checked><span><b>تشغيل الإرسال التلقائي كل 4 ساعات</b><br><small>يمكن إيقاف الجدولة مع بقاء زر الإرسال الفوري متاحًا</small></span></label>
             <div class="field full"><label>نص الرسالة</label><textarea id="groupGuideMessage" class="input group-guide-message" maxlength="4000" required></textarea><small>النظام يعتمد أول رقم في أول سطر، مثل: 5 د، 5 دنانير، 5 ورقا، أو السعر 10 دنانير.</small></div>
