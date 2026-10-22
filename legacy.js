@@ -1286,10 +1286,10 @@ export function makeLegacyRpc(app){
 
       case "listManualBroadcastGroups": {
         await verify(args[0],["admin"]);
-        const base=String(process.env.DROPCODE_API_URL||"").replace(/\/$/,""),key=String(process.env.DROPCODE_API_KEY||""),session=String(process.env.DROPCODE_SESSION||"");
+        const base=String(process.env.DROPCODE_API_URL||"").replace(/\/$/,""),key=String(process.env.DROPCODE_API_KEY||""),session=String(process.env.DROPCODE_SESSION||"").trim().toLowerCase();
         if(!base||!key||!session)throw Error("إعدادات DropConnect غير مكتملة");
         const response=await fetch(base+"/api/"+encodeURIComponent(session)+"/groups",{headers:{"X-Api-Key":key},signal:AbortSignal.timeout(15000)});
-        if(!response.ok)throw Error("تعذر تحميل القروبات");
+        if(!response.ok)throw Error("تعذر تحميل القروبات: DropConnect HTTP "+response.status+" — تأكد من معرّف جلسة السفير وصلاحية المفتاح");
         const data=await response.json(),groups=Array.isArray(data)?data:Array.isArray(data.groups)?data.groups:[];
         return groups.filter(g=>/^[0-9-]+@g\.us$/.test(String(g.id||""))).map(g=>({id:String(g.id),name:String(g.subject||g.name||g.id)}));
       }
@@ -1301,11 +1301,11 @@ export function makeLegacyRpc(app){
         if(!base||!key||!session)throw Error("إعدادات DropConnect غير مكتملة");
         const headers={"X-Api-Key":key,"Content-Type":"application/json"};
         const groupsResponse=await fetch(base+"/api/"+encodeURIComponent(session)+"/groups",{headers,signal:AbortSignal.timeout(15000)});
-        if(!groupsResponse.ok)throw Error("تعذر التحقق من القروب");
+        if(!groupsResponse.ok)throw Error("تعذر التحقق من القروب: DropConnect HTTP "+groupsResponse.status);
         const source=await groupsResponse.json(),groups=Array.isArray(source)?source:Array.isArray(source.groups)?source.groups:[];
         if(!groups.some(g=>String(g.id)===groupId))throw Error("القروب غير موجود في جلسة واتساب الحالية");
         const response=await fetch(base+"/api/sendText",{method:"POST",headers,body:JSON.stringify({session,chatId:groupId,text:message}),signal:AbortSignal.timeout(25000)});
-        if(!response.ok)throw Error("فشل إرسال الرسالة إلى القروب");
+        if(!response.ok)throw Error("فشل إرسال الرسالة إلى القروب: DropConnect HTTP "+response.status);
         const result=await response.json().catch(()=>({}));if(result.ok===false)throw Error("رفض DropConnect إرسال الرسالة");
         await audit(me.sub,"whatsapp.manual_group_broadcast","whatsapp_group",groupId,{length:message.length}).catch(()=>{});
         return {ok:true};
