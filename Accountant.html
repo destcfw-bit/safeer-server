@@ -1341,7 +1341,33 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
 #weeklyParticipantsToggle,#accountantWithdrawalToggle{box-shadow:0 6px 20px #0002}
 @media(max-width:768px){.sidebar .nav>button,.sidebar .nav-group>button{min-height:47px}#weeklyParticipantsToggle{bottom:76px!important}#accountantWithdrawalToggle{bottom:125px!important}}
 </style>
-</head>
+<style id="accountant2026Redesign">
+/* Unified responsive accountant layout: Safeer */
+:root{--admin-accent:#1685a6;--admin-accent-soft:rgba(22,133,166,.10);--admin-border:rgba(126,143,163,.19)}
+body{overflow-x:hidden}
+.app,.layout,.shell{max-width:100%}
+.sidebar{box-shadow:-8px 0 35px rgba(0,0,0,.055);border-left:1px solid var(--admin-border)}
+.sidebar .nav{gap:4px}
+.sidebar .nav>button,.sidebar .nav-group>button{width:100%;border-radius:11px;padding:11px 12px;font-weight:650}
+.sidebar .nav button.active{background:var(--admin-accent)!important;color:white!important;box-shadow:0 5px 14px var(--admin-accent-soft)}
+.sidebar .nav-group{background:transparent;border:1px solid var(--admin-border)}
+.sidebar .nav-section-label{margin-top:7px}
+.main{min-width:0;overflow:visible;padding-bottom:48px}
+.topbar{gap:14px;flex-wrap:wrap}
+.topbar .top-actions{gap:8px}
+.main .view{min-width:0}
+.main .view.active{display:block!important}
+.main .panel{max-width:100%;min-width:0;border-radius:16px}
+#view-weekly-participants,#view-captain-withdrawals{padding-top:10px;min-height:55vh}
+#view-weekly-participants .panel,#view-captain-withdrawals .panel{position:static!important;inset:auto!important;transform:none!important;z-index:auto!important;box-shadow:0 8px 26px rgba(0,0,0,.06);background:var(--card,var(--panel,#fff));color:var(--text,inherit);border:1px solid var(--admin-border)}
+#view-weekly-participants strong,#view-captain-withdrawals h3{font-size:clamp(19px,2vw,25px);line-height:1.5}
+#weeklyParticipantsSummary{padding:15px;border-radius:12px;background:var(--admin-accent-soft);line-height:1.9}
+#weeklyParticipantsRows>div,#accountantWithdrawalList>div{padding:13px!important;border-bottom:1px solid var(--admin-border)!important;line-height:1.7}
+#view-weekly-participants button,#view-captain-withdrawals button{cursor:pointer;border-radius:9px;padding:9px 13px}
+#view-captain-withdrawals input,#view-captain-withdrawals select{max-width:100%;min-height:40px;border-radius:9px;padding:8px}
+@media(max-width:900px){.main{padding-inline:12px!important}.topbar{align-items:flex-start}.topbar .top-actions{width:100%;justify-content:flex-start}.dashboard-hero{flex-direction:column;align-items:stretch}.quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.main .panel{padding:13px!important}.topbar .top-actions .btn{font-size:12px;padding:8px}.quick-actions{grid-template-columns:1fr 1fr}#view-captain-withdrawals input{width:100%}}
+</style></head>
 <style id="safeer-login-luxe">
 #loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
 #loginScreen.login-shell.hidden{display:none!important}
@@ -2117,12 +2143,12 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
         </div>
       </section>
 <section id="view-captain-withdrawals" class="view" dir="rtl"><div id="accountantWithdrawalPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
- <button id="accountantWithdrawalClose">إغلاق ×</button><h3>💸 طلبات سحب الكباتن</h3><button id="accountantWithdrawalRefresh">تحديث الطلبات</button>
+ <button id="accountantWithdrawalClose" type="button" class="btn btn-soft">العودة للرئيسية</button><h3>💸 طلبات سحب الكباتن</h3><button id="accountantWithdrawalRefresh">تحديث الطلبات</button>
  <div style="margin:10px 0"><input id="withdrawalCaptainId" placeholder="رقم ID الكابتن" type="number"><select id="withdrawalClassification"><option value="producer">منتج فقط</option><option value="both">منتج ومستهلك</option><option value="consumer">مستهلك فقط</option></select><button id="withdrawalSaveClass">حفظ التصنيف</button></div>
  <div id="accountantWithdrawalList"></div>
 </div></section>
 <section id="view-weekly-participants" class="view" dir="rtl"><div id="weeklyParticipantsPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
-  <div style="display:flex;justify-content:space-between;align-items:center"><strong>📊 المتفاعلون على الطلبات</strong><button id="weeklyParticipantsClose" type="button">✕</button></div>
+  <div style="display:flex;justify-content:space-between;align-items:center"><strong>📊 المتفاعلون على الطلبات</strong><button id="weeklyParticipantsClose" type="button" class="btn btn-soft">العودة للرئيسية</button></div>
   <p id="weeklyParticipantsSummary">جارٍ تحميل التقرير...</p>
   <div id="weeklyParticipantsRows"></div>
   <button id="weeklyParticipantsRefresh" type="button">🔄 تحديث</button>
