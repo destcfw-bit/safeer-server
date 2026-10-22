@@ -1301,11 +1301,11 @@ export function makeLegacyRpc(app){
         if(!base||!key||!session)throw Error("إعدادات DropConnect غير مكتملة");
         const headers={"X-Api-Key":key,"Content-Type":"application/json"};
         const groupsResponse=await fetch(base+"/api/"+encodeURIComponent(session)+"/groups",{headers,signal:AbortSignal.timeout(15000)});
-        if(!groupsResponse.ok)throw Error("تعذر التحقق من القروب");
+        if(!groupsResponse.ok)throw Error("تعذر التحقق من القروب: DropConnect HTTP "+groupsResponse.status);
         const source=await groupsResponse.json(),groups=Array.isArray(source)?source:Array.isArray(source.groups)?source.groups:[];
         if(!groups.some(g=>String(g.id)===groupId))throw Error("القروب غير موجود في جلسة واتساب الحالية");
         const response=await fetch(base+"/api/sendText",{method:"POST",headers,body:JSON.stringify({session,chatId:groupId,text:message}),signal:AbortSignal.timeout(25000)});
-        if(!response.ok)throw Error("فشل إرسال الرسالة إلى القروب");
+        if(!response.ok)throw Error("فشل إرسال الرسالة إلى القروب: DropConnect HTTP "+response.status);
         const result=await response.json().catch(()=>({}));if(result.ok===false)throw Error("رفض DropConnect إرسال الرسالة");
         await audit(me.sub,"whatsapp.manual_group_broadcast","whatsapp_group",groupId,{length:message.length}).catch(()=>{});
         return {ok:true};

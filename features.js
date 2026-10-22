@@ -3031,9 +3031,9 @@ export async function reconcileMixed40(userId){
   return {netAdjustment,adjusted,found:q.rowCount,errors,weekStart:week.start,weekEnd:week.end,disabled:true,rule:'اقتطاع 40 حركة ملغى — أرضية 1.50 الخميس 9م فقط'};
 }
 
-// ----- Weekly floor: Thursday 21:00 (Asia/Amman), exactly once per captain/week -----
+// ----- Weekly floor: Thursday 16:00 (Asia/Amman), exactly once per captain/week -----
 let thursdayDeductionTimer=null;
-function ammanThursdayFloorScheduledAt(weekEnd){return new Date(`${weekEnd}T21:00:00+03:00`)}
+function ammanThursdayFloorScheduledAt(weekEnd){return new Date(`${weekEnd}T16:00:00+03:00`)}
 
 function scheduledFloorWeek(now=new Date()){
   const p=jordanParts(now);
