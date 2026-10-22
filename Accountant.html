@@ -1424,8 +1424,8 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
         </details>
         <button data-view="settlements" onclick="switchView('settlements',this)"><span>✓</span> تحويلات الجمعة <b id="navSettlementBadge" class="nav-count hidden">0</b></button>
         <button data-view="inventory" onclick="switchView('inventory',this)"><span>▦</span> الجرد والحركات</button>
-        <button type="button" onclick="document.getElementById('weeklyParticipantsToggle').click()"><span>📊</span> المتفاعلون والأرضية</button>
-        <button type="button" onclick="document.getElementById('accountantWithdrawalToggle').click()"><span>💸</span> طلبات سحب الرصيد</button>
+        <button type="button" data-view="weekly-participants" onclick="switchView('weekly-participants',this);document.getElementById('weeklyParticipantsRefresh').click()"><span>📊</span> المتفاعلون والأرضية</button>
+        <button type="button" data-view="captain-withdrawals" onclick="switchView('captain-withdrawals',this);document.getElementById('accountantWithdrawalRefresh').click()"><span>💸</span> طلبات سحب الرصيد</button>
         <button data-view="north-diagnostics" onclick="switchView('north-diagnostics',this)"><span>🔎</span> تشخيص جرد شمال</button>
         <button data-view="transactions" onclick="switchView('transactions',this)"><span>≡</span> سجل الحركات</button>
         <div class="nav-section-label">الأدوات المتقدمة</div>
@@ -5445,7 +5445,7 @@ window.__setTextIfPresent=(id,value)=>{const el=document.getElementById(id);if(e
     document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
     if(btn)btn.classList.add('active');
     btn?.closest('details')?.setAttribute('open','');
-    const titles={dashboard:['الرئيسية','ملخص حالة النظام اليوم'],captains:['الكباتن','إدارة الحسابات والأرصدة'],unregistered:['أرقام غير مسجلة','رسائل حُذفت من القروب لأن أصحابها غير موجودين بالنظام'],movements:['إدخال الجرد اليدوي','إنتاج أو استهلاك وإضافة ملف Excel للدورة الحالية'],transfers:['الحوالات','مراجعة طلبات الشحن'],settlements:['تحويلات الجمعة','المستحقات الأسبوعية والتحويلات السابقة'],codes:['أكواد الشحن','الأكواد الصادرة وحالتها'],inventory:['الجرد والحركات','ملخص لحظي للإنتاج والاستهلاك والأرصدة'],'comparison-monitor':['مقارنة اليدوي والآلي','تشغيل آمن من نفس الرقم والقروب بدون تغيير الأرصدة'],reconciliation:['مقارنة الجرد اليدوي','تسوية فرق الجرد بين اليدوي والنظام'],whatsapp:['جرد واتساب','مراجعة النصوص والتسجيلات الصوتية واعتمادها'],'live-whatsapp':['مباشر القروب','مشاهدة ما يحدث في قروب واتساب لحظة بلحظة'],quality:['مركز الأخطاء','المراجعة والتصحيح والفحص اليومي وسجل التدقيق'],'system-health':['مراقبة النظام','PostgreSQL و Redis والطابور وآخر المزامنة'],storage:['إدارة التخزين','تنظيف الصور وبيانات واتساب والأرشيف القديم بأمان'],'reliability':['الاعتمادية والتشخيص','DLQ و Replay و Shadow Mode ومنع التكرار'],'migration':['مطابقة Google / PostgreSQL','مقارنة الكباتن والأرصدة والحركات قبل التحويل'],'full-migration':['نقل بيانات App Script','رفع وتطبيق بيانات Google على PostgreSQL بأمان'],'staff-users':['المستخدمون والصلاحيات','إدارة الأدمن والمحاسبين والصلاحيات'],'green-settings':['واتساب والقروب','الربط والاسترجاع والرسائل وصلاحيات الإلغاء'],transactions:['سجل الحركات','حركات الشحن والجرد في الدورة الحالية'],maintenance:['صيانة موقع الكباتن','إغلاق موقع الكباتن وتحديد نسبة إنجاز الصيانة']};
+    const titles={'weekly-participants':['المتفاعلون والأرضية','تقرير الكباتن الفريدين والأرضية الأسبوعية'],'captain-withdrawals':['طلبات سحب الرصيد','مراجعة طلبات السحب وتصنيف الكباتن'],dashboard:['الرئيسية','ملخص حالة النظام اليوم'],captains:['الكباتن','إدارة الحسابات والأرصدة'],unregistered:['أرقام غير مسجلة','رسائل حُذفت من القروب لأن أصحابها غير موجودين بالنظام'],movements:['إدخال الجرد اليدوي','إنتاج أو استهلاك وإضافة ملف Excel للدورة الحالية'],transfers:['الحوالات','مراجعة طلبات الشحن'],settlements:['تحويلات الجمعة','المستحقات الأسبوعية والتحويلات السابقة'],codes:['أكواد الشحن','الأكواد الصادرة وحالتها'],inventory:['الجرد والحركات','ملخص لحظي للإنتاج والاستهلاك والأرصدة'],'comparison-monitor':['مقارنة اليدوي والآلي','تشغيل آمن من نفس الرقم والقروب بدون تغيير الأرصدة'],reconciliation:['مقارنة الجرد اليدوي','تسوية فرق الجرد بين اليدوي والنظام'],whatsapp:['جرد واتساب','مراجعة النصوص والتسجيلات الصوتية واعتمادها'],'live-whatsapp':['مباشر القروب','مشاهدة ما يحدث في قروب واتساب لحظة بلحظة'],quality:['مركز الأخطاء','المراجعة والتصحيح والفحص اليومي وسجل التدقيق'],'system-health':['مراقبة النظام','PostgreSQL و Redis والطابور وآخر المزامنة'],storage:['إدارة التخزين','تنظيف الصور وبيانات واتساب والأرشيف القديم بأمان'],'reliability':['الاعتمادية والتشخيص','DLQ و Replay و Shadow Mode ومنع التكرار'],'migration':['مطابقة Google / PostgreSQL','مقارنة الكباتن والأرصدة والحركات قبل التحويل'],'full-migration':['نقل بيانات App Script','رفع وتطبيق بيانات Google على PostgreSQL بأمان'],'staff-users':['المستخدمون والصلاحيات','إدارة الأدمن والمحاسبين والصلاحيات'],'green-settings':['واتساب والقروب','الربط والاسترجاع والرسائل وصلاحيات الإلغاء'],transactions:['سجل الحركات','حركات الشحن والجرد في الدورة الحالية'],maintenance:['صيانة موقع الكباتن','إغلاق موقع الكباتن وتحديد نسبة إنجاز الصيانة']};
     titles.quality=['مركز الأخطاء','المراجعة والتصحيح للحركات الجديدة'];
     titles['captain-admin-access']=['تفويض الإدارة للكباتن','تحديد صلاحيات كل رقم على حدة'];
     $('pageTitle').textContent=(titles[name]||[name,''])[0];
@@ -6383,12 +6383,12 @@ window.openOldBalanceTransfer=function(){
 })();
 </script>
 
-<section id="accountantWithdrawalPanel" style="position:fixed;bottom:18px;left:18px;z-index:9500;width:min(570px,calc(100% - 36px));max-height:75vh;overflow:auto;display:none;background:#14202b;color:white;border:1px solid #c8a65b;border-radius:15px;padding:18px" dir="rtl">
+<section id="view-captain-withdrawals" class="view" dir="rtl"><div id="accountantWithdrawalPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
  <button id="accountantWithdrawalClose">إغلاق ×</button><h3>💸 طلبات سحب الكباتن</h3><button id="accountantWithdrawalRefresh">تحديث الطلبات</button>
  <div style="margin:10px 0"><input id="withdrawalCaptainId" placeholder="رقم ID الكابتن" type="number"><select id="withdrawalClassification"><option value="producer">منتج فقط</option><option value="both">منتج ومستهلك</option><option value="consumer">مستهلك فقط</option></select><button id="withdrawalSaveClass">حفظ التصنيف</button></div>
  <div id="accountantWithdrawalList"></div>
-</section>
-<button id="accountantWithdrawalToggle" style="position:fixed;bottom:18px;left:18px;z-index:9400;border:0;border-radius:40px;background:#c8a65b;color:#111;padding:13px;font-weight:bold">💸 طلبات السحب</button>
+</div></section>
+<button id="accountantWithdrawalToggle" type="button" hidden style="display:none">💸 طلبات السحب</button>
 <script>
 (function(){
  const el=id=>document.getElementById(id);
@@ -6396,20 +6396,20 @@ window.openOldBalanceTransfer=function(){
  const rpc=async(method,...args)=>{const r=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok||j.__rpcError||j.__error)throw Error(j.message||j.error||'تعذر الاتصال');return j};
  async function load(){try{const rows=await rpc('getAccountantWithdrawalData',token());const box=el('accountantWithdrawalList');box.replaceChildren();for(const w of rows){const div=document.createElement('div');div.style.cssText='border-bottom:1px solid #555;padding:10px 0';const label=document.createElement('div');label.textContent='#'+w.id+' — '+w.name+' — '+w.amount+' د.أ — '+w.status;div.append(label);if(w.status==='pending'||w.status==='approved'){for(const [status,text] of w.status==='pending'?[['approved','موافقة وخصم'],['rejected','رفض']]:[['transferred','تم التحويل']]){const b=document.createElement('button');b.textContent=text;b.onclick=async()=>{if(!confirm('تأكيد '+text+'؟'))return;try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message)}};div.append(b)}}box.append(div)}}catch(e){el('accountantWithdrawalList').textContent=e.message}}
  el('accountantWithdrawalToggle').onclick=()=>{el('accountantWithdrawalPanel').style.display='block';load()};
- el('accountantWithdrawalClose').onclick=()=>el('accountantWithdrawalPanel').style.display='none';
+ el('accountantWithdrawalClose').onclick=()=>goToView('dashboard');
  el('accountantWithdrawalRefresh').onclick=load;
  el('withdrawalSaveClass').onclick=async()=>{try{await rpc('setWithdrawalClassification',token(),el('withdrawalCaptainId').value,el('withdrawalClassification').value);alert('تم حفظ التصنيف')}catch(e){alert(e.message)}};
 })();
 </script>
 
 
-<section id="weeklyParticipantsPanel" dir="rtl" style="position:fixed;right:15px;bottom:15px;z-index:9400;background:#18232d;color:#fff;border:1px solid #c8a65b;border-radius:12px;padding:14px;width:min(410px,calc(100vw - 30px));max-height:75vh;overflow:auto;display:none">
+<section id="view-weekly-participants" class="view" dir="rtl"><div id="weeklyParticipantsPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
   <div style="display:flex;justify-content:space-between;align-items:center"><strong>📊 المتفاعلون على الطلبات</strong><button id="weeklyParticipantsClose" type="button">✕</button></div>
   <p id="weeklyParticipantsSummary">جارٍ تحميل التقرير...</p>
   <div id="weeklyParticipantsRows"></div>
   <button id="weeklyParticipantsRefresh" type="button">🔄 تحديث</button>
-</section>
-<button id="weeklyParticipantsToggle" type="button" style="position:fixed;right:15px;bottom:15px;z-index:9399;background:#c8a65b;color:#151515;border:0;border-radius:30px;padding:12px;font-weight:bold">📊 المتفاعلون والأرضية</button>
+</div></section>
+<button id="weeklyParticipantsToggle" type="button" hidden style="display:none">📊 المتفاعلون والأرضية</button>
 <script>
 (()=>{
 const byId=id=>document.getElementById(id);
@@ -6427,7 +6427,7 @@ async function load(){
  }catch(e){summary.textContent='تعذر تحميل التقرير: '+e.message}
 }
 byId('weeklyParticipantsToggle').onclick=()=>{byId('weeklyParticipantsPanel').style.display='block';load()};
-byId('weeklyParticipantsClose').onclick=()=>byId('weeklyParticipantsPanel').style.display='none';
+byId('weeklyParticipantsClose').onclick=()=>goToView('dashboard');
 byId('weeklyParticipantsRefresh').onclick=load;
 })();
 </script>
