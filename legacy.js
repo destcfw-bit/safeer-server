@@ -1,5 +1,5 @@
 import { weeklyParticipantsReport } from './weekly-participants.js';
-import { captainWithdrawalData, requestCaptainWithdrawal, accountantWithdrawalData, setWithdrawalClassification, markWithdrawalAnnouncementSeen, reviewWithdrawal } from './withdrawal-service.js';
+import { captainWithdrawalData, requestCaptainWithdrawal, accountantWithdrawalData, setWithdrawalClassification, markWithdrawalAnnouncementSeen, reviewWithdrawal, getWithdrawalControl, setWithdrawalControl } from './withdrawal-service.js';
 
 import bcrypt from "bcryptjs";
 import * as XLSX from "xlsx";
@@ -1264,6 +1264,8 @@ export function makeLegacyRpc(app){
       case "getCaptainWithdrawalData": { const me=await verify(args[0],["captain"]); return captainWithdrawalData(me.captainId); }
       case "requestCaptainWithdrawal": { const me=await verify(args[0],["captain"]); return requestCaptainWithdrawal(me.captainId,args[1]); }
       case "markWithdrawalAnnouncementSeen": { const me=await verify(args[0],["captain"]); return markWithdrawalAnnouncementSeen(me.captainId); }
+      case "getWithdrawalControl": { await verify(args[0],["admin","accountant"]); return getWithdrawalControl(); }
+      case "setWithdrawalControl": { const me=await verify(args[0],["admin"]); if(me.delegated)throw Error("غير مصرح"); return setWithdrawalControl(args[1]===true); }
       case "getAccountantWithdrawalData": { await verify(args[0],["admin","accountant"]); return accountantWithdrawalData(); }
       case "setWithdrawalClassification": { const me=await verify(args[0],["admin"]); if(me.delegated)throw Error("غير مصرح"); return setWithdrawalClassification(args[1],args[2]); }
       case "reviewCaptainWithdrawal": { const me=await verify(args[0],["admin","accountant"]); return reviewWithdrawal(args[1],args[2],me.sub,args[3]); }
