@@ -1,5 +1,5 @@
 import { weeklyParticipantsReport } from './weekly-participants.js';
-import { captainWithdrawalData, requestCaptainWithdrawal, accountantWithdrawalData, setWithdrawalClassification, markWithdrawalAnnouncementSeen, reviewWithdrawal, getWithdrawalControl, setWithdrawalControl } from './withdrawal-service.js';
+import { captainWithdrawalData, requestCaptainWithdrawal, accountantWithdrawalData, listWithdrawalClassifications, markWithdrawalAnnouncementSeen, reviewWithdrawal, getWithdrawalControl, setWithdrawalControl, saveCaptainCliq, adminUpdateCaptainCliq } from './withdrawal-service.js';
 
 import bcrypt from "bcryptjs";
 import * as XLSX from "xlsx";
@@ -1266,8 +1266,10 @@ export function makeLegacyRpc(app){
       case "markWithdrawalAnnouncementSeen": { const me=await verify(args[0],["captain"]); return markWithdrawalAnnouncementSeen(me.captainId); }
       case "getWithdrawalControl": { await verify(args[0],["admin","accountant"]); return getWithdrawalControl(); }
       case "setWithdrawalControl": { const me=await verify(args[0],["admin"]); if(me.delegated)throw Error("غير مصرح"); return setWithdrawalControl(args[1]===true); }
+      case "saveCaptainCliq": { const me=await verify(args[0],["captain"]); return saveCaptainCliq(me.captainId,args[1],args[2]); }
+      case "adminUpdateCaptainCliq": { const me=await verify(args[0],["admin"]); if(me.delegated)throw Error("غير مصرح"); return adminUpdateCaptainCliq(args[1],args[2],args[3]); }
+      case "listWithdrawalClassifications": { await verify(args[0],["admin","accountant"]); return listWithdrawalClassifications(); }
       case "getAccountantWithdrawalData": { await verify(args[0],["admin","accountant"]); return accountantWithdrawalData(); }
-      case "setWithdrawalClassification": { const me=await verify(args[0],["admin"]); if(me.delegated)throw Error("غير مصرح"); return setWithdrawalClassification(args[1],args[2]); }
       case "reviewCaptainWithdrawal": { const me=await verify(args[0],["admin","accountant"]); return reviewWithdrawal(args[1],args[2],me.sub,args[3]); }
 
       case "getCaptainSiteMaintenanceStatus":
