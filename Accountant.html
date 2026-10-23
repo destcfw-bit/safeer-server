@@ -4474,9 +4474,8 @@ body{overflow-x:hidden}
   async function previewSafeerFloorRefund(){
     if(state.me?.role!=='admin')return toast('للإدارة الرئيسية فقط','error');
     try{
-      const response=await fetch('/admin/safeer-half-floor-refund/preview',{headers:{Authorization:'Bearer '+token}});
-      const result=await response.json();
-      if(!response.ok||!result.ok)throw Error(result.error||'تعذر المعاينة');
+      const result=await api('previewSafeerHalfFloorRefund',token);
+      if(!result.ok)throw Error(result.error||'تعذر المعاينة');
       safeerRefundPreview=result;
       $('safeerRefundInfo').textContent='المستحقون: '+result.count+' | الإجمالي: '+result.total+' دينار';
     }catch(error){toast(error.message,'error')}
@@ -4488,9 +4487,8 @@ body{overflow-x:hidden}
     if(!confirm('استرجاع '+safeerRefundPreview.total+' دينار لعدد '+safeerRefundPreview.count+' خصم؟'))return;
     if(prompt('اكتب استرجاع للتأكيد')!=='استرجاع')return;
     try{
-      const response=await fetch('/admin/safeer-half-floor-refund/apply',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({confirm:'REFUND_HALF_FLOOR',expectedCount:safeerRefundPreview.count})});
-      const result=await response.json();
-      if(!response.ok||!result.ok)throw Error(result.error||'فشل الاسترجاع');
+      const result=await api('applySafeerHalfFloorRefund',token,{confirm:'REFUND_HALF_FLOOR',expectedCount:safeerRefundPreview.count});
+      if(!result.ok)throw Error(result.error||'فشل الاسترجاع');
       toast('تم استرجاع '+result.total+' دينار','success');
       safeerRefundPreview=null;await previewSafeerFloorRefund();await loadData();
     }catch(error){safeerRefundPreview=null;toast(error.message,'error')}
