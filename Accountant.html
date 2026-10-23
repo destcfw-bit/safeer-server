@@ -1774,7 +1774,8 @@ body{overflow-x:hidden}
           <div id="weeklyFloorStats" class="cards"></div>
           <div id="weeklyFloorComparisonTable"></div>
         </div>
-        <div id="inventoryStats" class="cards"></div>
+        <div class="panel" id="safeerRefundPanel" style="padding:16px;margin:12px 0"><h3>💰 استرجاع نص دينار — السفير</h3><p>استرجاع 0.500 د.أ لمن خُصمت منه أرضية 1.500 د.أ، مرة واحدة لكل خصم.</p><button class="btn btn-soft" type="button" onclick="previewSafeerFloorRefund()">معاينة المستحقين</button> <button class="btn btn-primary" type="button" onclick="applySafeerFloorRefund()">💰 استرجاع نص دينار</button><p id="safeerRefundInfo">اضغط معاينة أولًا.</p></div>
+<div id="inventoryStats" class="cards"></div>
         <div class="panel">
           <div class="panel-head"><div><h3>الجرد والحركات الحالية</h3><p>يعرض الإدخال اليدوي ورسائل اللايف بعد التصفير الجديد</p></div><input id="inventorySearch" class="input search" placeholder="بحث باسم الكابتن أو رقم الهاتف..." oninput="renderInventory()"></div>
           <div id="inventoryTable"></div>
@@ -4468,7 +4469,35 @@ body{overflow-x:hidden}
 
   async function undoManualTransaction(id){const reason=prompt('سبب التراجع عن الحركة:','')||'';if(!reason.trim())return;if(!confirm('سيتم إنشاء حركة عكسية وإعادة الرصيد. متابعة؟'))return;try{const res=await api('undoAccountantTransaction',token,id,reason);if(!res.ok)throw new Error(res.message);toast(res.message,'success');await loadData()}catch(err){toast(err.message,'error')}}
 
+
+  let safeerRefundPreview=null;
+  async function previewSafeerFloorRefund(){
+    if(state.me?.role!=='admin')return toast('للإدارة الرئيسية فقط','error');
+    try{
+      const response=await fetch('/admin/safeer-half-floor-refund/preview',{headers:{Authorization:'Bearer '+token}});
+      const result=await response.json();
+      if(!response.ok||!result.ok)throw Error(result.error||'تعذر المعاينة');
+      safeerRefundPreview=result;
+      $('safeerRefundInfo').textContent='المستحقون: '+result.count+' | الإجمالي: '+result.total+' دينار';
+    }catch(error){toast(error.message,'error')}
+  }
+  async function applySafeerFloorRefund(){
+    if(state.me?.role!=='admin')return toast('للإدارة الرئيسية فقط','error');
+    if(!safeerRefundPreview)return previewSafeerFloorRefund();
+    if(!safeerRefundPreview.count)return toast('لا يوجد مستحقون','error');
+    if(!confirm('استرجاع '+safeerRefundPreview.total+' دينار لعدد '+safeerRefundPreview.count+' خصم؟'))return;
+    if(prompt('اكتب استرجاع للتأكيد')!=='استرجاع')return;
+    try{
+      const response=await fetch('/admin/safeer-half-floor-refund/apply',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({confirm:'REFUND_HALF_FLOOR',expectedCount:safeerRefundPreview.count})});
+      const result=await response.json();
+      if(!response.ok||!result.ok)throw Error(result.error||'فشل الاسترجاع');
+      toast('تم استرجاع '+result.total+' دينار','success');
+      safeerRefundPreview=null;await previewSafeerFloorRefund();await loadData();
+    }catch(error){safeerRefundPreview=null;toast(error.message,'error')}
+  }
+
   function renderWeeklyComparison(){
+    if($('safeerRefundPanel'))$('safeerRefundPanel').style.display=state.me?.role==='admin'?'block':'none';
     const comparison=state.weeklyComparison||{},summary=comparison.summary||{},rows=comparison.rows||[];
     $('weeklyComparisonPeriod').textContent=comparison.weekStart&&comparison.weekEnd?`من ${comparison.weekStart} إلى ${comparison.weekEnd}`:'الأسبوع الحالي';
     $('weeklyMovementComparison').innerHTML=[
