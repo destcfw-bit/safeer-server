@@ -1069,6 +1069,55 @@ app.post("/settlements/:id/archive", {preHandler:[requireRoles("admin","accounta
   return reply.code(200).send({ok:true,settlement});
 });
 
+
+const safeerHalfFloorCandidates = `
+  SELECT le.id,le.captain_id,c.name,le.amount,le.created_at
+  FROM ledger_entries le JOIN captains c ON c.id=le.captain_id
+  WHERE le.amount=-1.500
+    AND le.reversed_at IS NULL
+    AND COALESCE(le.metadata->>'type','')='WEEKLY_FLOOR'
+    AND NOT EXISTS (SELECT 1 FROM ledger_entries refund
+      WHERE refund.reference_type='safeer_half_floor_refund'
+        AND refund.reference_id=le.id::text)
+  ORDER BY le.id
+`;
+app.get("/admin/safeer-half-floor-refund/preview",{preHandler:[requireRoles("admin")]},async()=>{
+  const {rows}=await db.query(safeerHalfFloorCandidates);
+  return {ok:true,count:rows.length,total:(rows.length*0.5).toFixed(3),captains:rows.map(r=>({id:r.captain_id,name:r.name,entryId:r.id}))};
+});
+app.post("/admin/safeer-half-floor-refund/apply",{preHandler:[requireRoles("admin")]},async(request,reply)=>{
+  if(request.body?.confirm!=="REFUND_HALF_FLOOR")return reply.code(400).send({ok:false,error:"confirmation_required"});
+  const client=await db.connect();
+  let captainIds=[];
+  try{
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('safeer_half_floor_refund_v1'))");
+    const {rows}=await client.query(safeerHalfFloorCandidates);
+    if(Number(request.body.expectedCount)!==rows.length){
+      await client.query("ROLLBACK");
+      return reply.code(409).send({ok:false,error:"preview_changed",count:rows.length});
+    }
+    for(const row of rows){
+      await client.query("SELECT id FROM captains WHERE id=$1 FOR UPDATE",[row.captain_id]);
+      await client.query(`INSERT INTO ledger_entries
+        (captain_id,amount,entry_type,direction,reference_type,reference_id,description,metadata,created_by_user_id)
+        VALUES ($1,0.500,'MANUAL_ADJUSTMENT','credit','safeer_half_floor_refund',$2,
+          'استرجاع نصف دينار من أرضية 1.50 إلى 1.00',
+          $3::jsonb,$4)`,
+        [row.captain_id,String(row.id),JSON.stringify({type:"WEEKLY_FLOOR_PARTIAL_REFUND",originalFloorEntryId:String(row.id),refundAmount:0.5}),request.user.sub]);
+    }
+    await client.query(`INSERT INTO audit_logs(user_id,action,entity_type,entity_id,details)
+      VALUES($1,'safeer.floor.half_refund','system','bulk',$2::jsonb)`,
+      [request.user.sub,JSON.stringify({count:rows.length,total:rows.length*0.5,entryIds:rows.map(r=>r.id)})]);
+    await client.query("COMMIT");
+    captainIds=[...new Set(rows.map(r=>String(r.captain_id)))];
+    const {syncCaptainBalanceState}=await import("./features.js");
+    await Promise.all(captainIds.map(id=>syncCaptainBalanceState(id).catch(error=>request.log.error({error,captainId:id},"refund balance sync failed"))));
+    return {ok:true,count:rows.length,total:(rows.length*0.5).toFixed(3)};
+  }catch(error){await client.query("ROLLBACK").catch(()=>{});throw error}
+  finally{client.release()}
+});
+
 app.setErrorHandler((error, request, reply) => {
   request.log.error(error);
   if (error?.statusCode) return reply.code(error.statusCode).send({ok:false,error:error.message});
