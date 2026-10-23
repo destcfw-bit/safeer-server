@@ -2486,6 +2486,34 @@ export function makeLegacyRpc(app){
       case "reopenInventoryCancellation":{const me=await verify(args[0],["admin","accountant"]);await reopenCancellationNative(args[1],args[2],me.sub);return {ok:true,message:"تمت إعادة فتح الجرد؛ يمكن وضع 👍 من جديد"};}
 
       case "runInventoryReconciliationNow":{await verify(args[0],["admin","accountant"]);const r=await safetyReconcile();return {ok:true,message:r.message,safety:r};}
+      case "previewSafeerHalfFloorRefund": {
+        await verify(args[0],["admin"]);
+        const {rows}=await db.query(`SELECT le.id,le.captain_id,c.name FROM ledger_entries le JOIN captains c ON c.id=le.captain_id WHERE le.amount=-1.500 AND le.reversed_at IS NULL AND le.metadata->>'type'='WEEKLY_FLOOR' AND NOT EXISTS(SELECT 1 FROM ledger_entries r WHERE r.reference_type='safeer_half_floor_refund' AND r.reference_id=le.id::text) ORDER BY le.id`);
+        return {ok:true,count:rows.length,total:(rows.length*0.5).toFixed(3)};
+      }
+      case "applySafeerHalfFloorRefund": {
+        const me=await verify(args[0],["admin"]);
+        const payload=args[1]||{};
+        if(payload.confirm!=="REFUND_HALF_FLOOR")throw new Error("confirmation_required");
+        const client=await db.connect();
+        let ids=[];
+        try{
+          await client.query("BEGIN");
+          await client.query("SELECT pg_advisory_xact_lock(hashtext('safeer_half_floor_refund_v1'))");
+          const {rows}=await client.query(`SELECT le.id,le.captain_id FROM ledger_entries le WHERE le.amount=-1.500 AND le.reversed_at IS NULL AND le.metadata->>'type'='WEEKLY_FLOOR' AND NOT EXISTS(SELECT 1 FROM ledger_entries r WHERE r.reference_type='safeer_half_floor_refund' AND r.reference_id=le.id::text) ORDER BY le.id`);
+          if(Number(payload.expectedCount)!==rows.length)throw new Error("preview_changed");
+          for(const row of rows){
+            await client.query("SELECT id FROM captains WHERE id=$1 FOR UPDATE",[row.captain_id]);
+            await client.query(`INSERT INTO ledger_entries(captain_id,amount,entry_type,direction,reference_type,reference_id,description,metadata,created_by_user_id) VALUES($1,0.500,'MANUAL_ADJUSTMENT','credit','safeer_half_floor_refund',$2,'استرجاع نصف دينار أرضية', $3::jsonb,$4)`,[row.captain_id,String(row.id),JSON.stringify({type:"WEEKLY_FLOOR_PARTIAL_REFUND",originalFloorEntryId:String(row.id)}),me.sub]);
+          }
+          await client.query(`INSERT INTO audit_logs(user_id,action,entity_type,entity_id,details) VALUES($1,'safeer.floor.half_refund','system','bulk',$2::jsonb)`,[me.sub,JSON.stringify({count:rows.length,total:rows.length*0.5})]);
+          await client.query("COMMIT");
+          ids=[...new Set(rows.map(row=>String(row.captain_id)))];
+          await Promise.all(ids.map(id=>syncCaptainBalanceState(id).catch(()=>null)));
+          return {ok:true,count:rows.length,total:(rows.length*0.5).toFixed(3)};
+        }catch(e){await client.query("ROLLBACK").catch(()=>{});throw e}
+        finally{client.release()}
+      }
       case "repairAllWeeklyFloors":{const me=await verify(args[0],["admin","accountant"]);const r=await repairWeeklyFloors(me.sub);return {ok:true,...r};}
       case "reconcilePreviousWeekMixed40":{const me=await verify(args[0],["admin","accountant"]);const r=await reconcileMixed40(me.sub);return {ok:r.errors?.length===0,message:r.adjusted?`تم إلغاء ${r.adjusted} اقتطاع/استرجاع قديم من قاعدة 40 حركة لهذا الأسبوع. تعديل الرصيد الصافي: ${Number(r.netAdjustment||0).toFixed(3)} د.أ. القاعدة الوحيدة الآن أرضية 1.50 د.أ الخميس 9 مساءً.`:`لا يوجد اقتطاع 40 حركة فعّال على الأسبوع الحالي. القاعدة الوحيدة الآن أرضية 1.50 د.أ الخميس 9 مساءً.`,result:r};}
       case "repairAllCancelledInventory":{const me=await verify(args[0],["admin","accountant"]);const r=await repairCancelled(me.sub);return {ok:true,...r};}
