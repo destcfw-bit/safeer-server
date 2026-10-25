@@ -1931,7 +1931,7 @@ body{overflow-x:hidden}
             </div>
             <hr style="border:0;border-top:1px solid #eee;margin:14px 0">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
-              <div><b>حذف لدى الجميع — بدون عكس مالي</b><div class="helper">حذف الرسالة لدى الجميع لا يلغي الجرد ولا يرجّع العمولة. إذا كانت الحركة محسوبة تبقى محسوبة. إزالة 👍 الفعّال و🚫 و1️⃣–5️⃣ تبقى حسب قواعدها.</div></div>
+              <div><b>حذف لدى الجميع — بدون عكس مالي</b><div class="helper">حذف الرسالة لدى الجميع لا يلغي الجرد ولا يرجّع العمولة. إذا كانت الحركة محسوبة تبقى محسوبة. إزالة 👍 الفعّال و🚫 و1️⃣–🔟 تبقى حسب قواعدها.</div></div>
               <div id="deleteRemovalPolicyButtons" class="staff-actions"></div>
             </div>
           </div>
@@ -2056,6 +2056,7 @@ body{overflow-x:hidden}
       </section>
 
       <section id="view-green-settings" class="view">
+        <div class="panel" style="border:2px solid #16a34a;padding:14px;margin-bottom:14px"><b>🛡️ تخويل المشرفين</b><p>أضف رقم المشرف أو ألغِ تخويله لإيموجيات 🚫 و1️⃣–🔟.</p><button class="btn btn-primary" type="button" onclick="document.getElementById('cancellationNumberForm')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('cancellationNumberPhone')?.focus()">فتح إدارة المشرفين المخوّلين</button></div>
         <div class="panel">
           <div class="panel-head"><div><h3>ربط واتساب</h3><p>اختر WAHA أو GREEN API واربط رقم واتساب والقروب بدون تعديل الأكواد</p></div></div>
           <div id="greenConnectionStatus" class="wa-status"></div>
@@ -2129,11 +2130,11 @@ body{overflow-x:hidden}
           </form>
         </div>
         <div class="panel">
-          <div class="panel-head"><div><h3>صلاحيات إيموجي الجرد 🚫 1️⃣–5️⃣</h3><p>أي رقم مفعّل هنا يستطيع وضع 🚫 للإلغاء الكامل، أو 1️⃣–5️⃣ للتعديل الجزئي على رد الإنجاز. الجرد المقفل بـ 🚫 لا يعود عبر 👍 إلا بعد «إعادة فتح» من المحاسب.</p></div></div>
+          <div class="panel-head"><div><h3>🛡️ المشرفون المخوّلون — 🚫 و1️⃣–🔟</h3><p>أي رقم مفعّل هنا يستطيع وضع 🚫 للإلغاء الكامل، أو 1️⃣–🔟 للتعديل الجزئي على رد الإنجاز. الجرد المقفل بـ 🚫 لا يعود عبر 👍 إلا بعد «إعادة فتح» من المحاسب.</p></div></div>
           <form id="cancellationNumberForm" class="form-grid" style="margin-bottom:16px">
             <div class="field"><label>اسم المسؤول</label><input id="cancellationNumberName" class="input" placeholder="مثال: المشرف أبو فلان" required></div>
             <div class="field"><label>رقم الهاتف</label><input id="cancellationNumberPhone" class="input" inputmode="numeric" placeholder="079 أو 79 أو 962" required></div>
-            <div class="field full"><small>الأرقام غير الموجودة في هذه القائمة يتم تجاهل 🚫 و1️⃣–5️⃣ منها تلقائيًا.</small></div>
+            <div class="field full"><small>الأرقام غير الموجودة في هذه القائمة يتم تجاهل 🚫 و1️⃣–🔟 منها تلقائيًا.</small></div>
             <button class="btn btn-primary full" type="submit">إضافة الرقم وتفعيله</button>
           </form>
           <div id="cancellationNumbersTable"></div>
@@ -5036,7 +5037,7 @@ body{overflow-x:hidden}
 
     const cancellations=state.reactionCancellations||[];
     if(!cancellations.length)$('reactionCancellationsTable').innerHTML=empty('لا توجد إلغاءات بواسطة 🚫');
-    else $('reactionCancellationsTable').innerHTML=`<div class="table-wrap"><table class="table" style="min-width:1150px"><thead><tr><th>المسؤول</th><th>رد الإنجاز</th><th>نوع التعديل</th><th>الأصل</th><th>الملغي</th><th>المتبقي</th><th>الحالة</th><th>التاريخ</th><th>الإجراء</th></tr></thead><tbody>${cancellations.map(item=>{const partial=item.Status==='PARTIAL';return `<tr><td>${esc(item.AuthorizedName||'—')}<br><small>${esc(item.AuthorizedPhone||'—')}</small></td><td><small>${esc(item.DoneMessageID||'—')}</small></td><td>${partial?'<span class="badge badge-pending">1️⃣–5️⃣ جزئي</span>':'<span class="badge badge-rejected">🚫 كامل</span>'}</td><td>${item.OriginalQuantity||'—'}</td><td>${item.CancelQuantity||0}</td><td>${item.RemainingQuantity??'—'}</td><td><span class="badge ${item.Status==='LOCKED'?'badge-rejected':partial?'badge-pending':'badge-approved'}">${item.Status==='LOCKED'?'مقفلة':partial?'تعديل جزئي':'أعيد فتحها'}</span></td><td>${date(item.CreatedAt)}</td><td>${item.Status==='LOCKED'?`<button class="btn btn-green" onclick="reopenCancellation('${esc(item.ID)}')">إعادة فتح</button>`:'—'}</td></tr>`}).join('')}</tbody></table></div>`;
+    else $('reactionCancellationsTable').innerHTML=`<div class="table-wrap"><table class="table" style="min-width:1150px"><thead><tr><th>المسؤول</th><th>رد الإنجاز</th><th>نوع التعديل</th><th>الأصل</th><th>الملغي</th><th>المتبقي</th><th>الحالة</th><th>التاريخ</th><th>الإجراء</th></tr></thead><tbody>${cancellations.map(item=>{const partial=item.Status==='PARTIAL';return `<tr><td>${esc(item.AuthorizedName||'—')}<br><small>${esc(item.AuthorizedPhone||'—')}</small></td><td><small>${esc(item.DoneMessageID||'—')}</small></td><td>${partial?'<span class="badge badge-pending">1️⃣–🔟 جزئي</span>':'<span class="badge badge-rejected">🚫 كامل</span>'}</td><td>${item.OriginalQuantity||'—'}</td><td>${item.CancelQuantity||0}</td><td>${item.RemainingQuantity??'—'}</td><td><span class="badge ${item.Status==='LOCKED'?'badge-rejected':partial?'badge-pending':'badge-approved'}">${item.Status==='LOCKED'?'مقفلة':partial?'تعديل جزئي':'أعيد فتحها'}</span></td><td>${date(item.CreatedAt)}</td><td>${item.Status==='LOCKED'?`<button class="btn btn-green" onclick="reopenCancellation('${esc(item.ID)}')">إعادة فتح</button>`:'—'}</td></tr>`}).join('')}</tbody></table></div>`;
 
     const cancelledOrders=state.cancelledOrders||[];
     if(!cancelledOrders.length){$('cancelledOrdersTable').innerHTML=empty('لا توجد طلبات ملغاة');return}
@@ -5172,7 +5173,7 @@ body{overflow-x:hidden}
       outageMetric(r.reactionEvents||0,'Reaction دخل محرك الحساب'),
       outageMetric(r.likesFound||0,'👍 إعجابات وجدها','good'),
       outageMetric(r.likeRemovalsFound||0,'إزالة 👍 / Reaction'),
-      outageMetric(r.partialReactionsFound||0,'تعديلات 1️⃣–5️⃣'),
+      outageMetric(r.partialReactionsFound||0,'تعديلات 1️⃣–🔟'),
       outageMetric(r.fullCancelsFound||0,'إلغاء 🚫'),
       outageMetric(r.reversedMessages||0,'رسائل تم عكس أثرها'),
       outageMetric(r.waitingReview||0,'تحتاج مراجعة','warn'),
