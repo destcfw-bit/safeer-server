@@ -331,6 +331,22 @@ app.get("/captains/:id/ledger", {preHandler:[app.authenticate]}, async (request,
   return {ok:true,entries:await listLedger(id, request.query?.limit)};
 });
 
+app.get("/captains/:id/statement",{preHandler:[requireRoles("admin","accountant")]},async(request,reply)=>{
+ const id=String(request.params.id||""),from=String(request.query?.from||""),to=String(request.query?.to||"");
+ if(!/^\d+$/.test(id)||[from,to].some(v=>v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))||(from&&to&&from>to))return reply.code(400).send({ok:false,error:"invalid_statement_parameters"});
+ const captain=(await db.query("SELECT id,name,phone,status FROM captains WHERE id=$1",[id])).rows[0];
+ if(!captain)return reply.code(404).send({ok:false,error:"captain_not_found"});
+ const start=from?new Date(from+"T00:00:00+03:00").toISOString():null,end=to?new Date(Date.parse(to+"T00:00:00+03:00")+86400000).toISOString():null;
+ const params=[id,...(start?[start]:[]),...(end?[end]:[])];
+ const where="captain_id=$1 AND entry_type<>'CLEAN_START_RESET'"+(start?" AND created_at >= $2::timestamptz":"")+(end?" AND created_at < $"+(start?3:2)+"::timestamptz":"");
+ const rows=(await db.query("SELECT id,entry_type,amount,description,created_at,reference_type,reference_id,metadata,reversed_at FROM ledger_entries WHERE "+where+" ORDER BY created_at,id LIMIT 20001",params)).rows;
+ if(rows.length>20000)return reply.code(413).send({ok:false,error:"statement_too_large",message:"اختر فترة أقصر من 20 ألف حركة"});
+ const opening=Number((await db.query("SELECT COALESCE(SUM(amount),0) balance FROM ledger_entries WHERE captain_id=$1 AND entry_type<>'CLEAN_START_RESET'"+(start?" AND created_at<$2::timestamptz":""),start?[id,start]:[id])).rows[0].balance);
+ let balance=opening,credit=0,debit=0;
+ const entries=rows.map(e=>{const a=Number(e.amount)||0;balance+=a;if(a>=0)credit+=a;else debit-=a;return {...e,running_balance:Number(balance.toFixed(3))}});
+ return {ok:true,captain,from,to,opening_balance:opening,closing_balance:Number(balance.toFixed(3)),totals:{credit:Number(credit.toFixed(3)),debit:Number(debit.toFixed(3))},rows:entries};
+});
+
 // Unified real movement endpoint.
 // kind: recharge | production | consumption | order_commission | rider_commission |
 //       weekly_deduction | manual_credit | manual_debit
