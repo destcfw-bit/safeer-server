@@ -1457,6 +1457,7 @@ body{overflow-x:hidden}
         <div class="nav-section-label">الأدوات المتقدمة</div>
         <details class="nav-group">
           <summary><span>⚙</span> الإعدادات والإدارة</summary>
+          <button type="button" data-view="green-settings" onclick="switchView('green-settings',this);setTimeout(()=>{document.getElementById('cancellationNumberForm')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('cancellationNumberPhone')?.focus({preventScroll:true})},120)"><span>🛡️</span> تخويل المشرفين 🚫 1️⃣–🔟</button>
           <button type="button" data-view="manual-broadcast" onclick="switchView('manual-broadcast',this);document.getElementById('broadcastLoadGroups').click()"><span>📣</span> إرسال رسالة واتساب</button>
           <button data-view="maintenance" onclick="switchView('maintenance',this)"><span>🛠</span> صيانة موقع الكباتن</button>
           <button data-view="unregistered" onclick="switchView('unregistered',this)"><span>⛔</span> أرقام غير مسجلة <b id="navUnregisteredBadge" class="nav-count hidden">0</b></button>
