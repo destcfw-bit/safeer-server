@@ -1245,6 +1245,9 @@ async function sendFreezePrivateAlert(captain,balance,strikeCount){
 async function captainProtectedFromGroupRemoval(captain){
   const q=await db.query(`SELECT protect_from_group_removal FROM captains WHERE id=$1`,[captain.id]);
   if(q.rows[0]?.protect_from_group_removal)return {protected:true,reason:"MANUAL_PROTECTION"};
+  // Captains with an active administration delegation are exempt from automatic group removal.
+  const delegated=await db.query(`SELECT 1 FROM captain_admin_grants WHERE captain_id=$1 AND active=TRUE LIMIT 1`,[captain.id]);
+  if(delegated.rowCount)return {protected:true,reason:"DELEGATED_ADMIN"};
   // Only a captain with positive production and no consumption in the current Jordan week.
   const weekly=await db.query(`
     SELECT COUNT(*) FILTER (WHERE entry_type='PRODUCTION' AND amount>0) AS produced,
