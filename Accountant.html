@@ -3726,7 +3726,22 @@ body{overflow-x:hidden}
       ?String(c.phone||raw).trim():raw||String(c.phone||'');
   }
 
-  function renderCaptains(){
+  async function openCaptainStatement(id){
+  const from=prompt('تاريخ البداية YYYY-MM-DD (فارغ = كل الفترات)','');
+  if(from===null)return;
+  const to=prompt('تاريخ النهاية YYYY-MM-DD (فارغ = حتى الآن)','');
+  if(to===null)return;
+  const win=window.open('','_blank');
+  if(!win)return alert('يرجى السماح بالنوافذ المنبثقة');
+  try{
+    const params=new URLSearchParams({from,to});
+    const response=await fetch('/captains/'+encodeURIComponent(id)+'/statement?'+params.toString(),{headers:{Authorization:'Bearer '+token}});
+    const data=await response.json();
+    if(!response.ok||!data.ok)throw Error(data.message||data.error);
+    renderCaptainStatementDocument(win,data);
+  }catch(error){win.close();alert('تعذر استخراج الكشف: '+error.message)}
+}
+function renderCaptains(){
     const q=($('captainSearch')?.value||'').trim().toLowerCase();
     const list=state.captains.filter(c=>!q||`${captainDisplayName(c)} ${c.phone}`.toLowerCase().includes(q));
     if(!list.length){$('captainsTable').innerHTML=empty('لا توجد نتائج');return}
