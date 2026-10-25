@@ -3726,7 +3726,15 @@ body{overflow-x:hidden}
       ?String(c.phone||raw).trim():raw||String(c.phone||'');
   }
 
-  async function openCaptainStatement(id){
+  function renderCaptainStatementDocument(win,d){
+ win.document.title='كشف حساب '+d.captain.name;
+ const pre=win.document.createElement('pre');
+ pre.style.cssText='direction:rtl;text-align:right;white-space:pre-wrap;font:13px Tahoma';
+ pre.textContent='كشف حساب تفصيلي: '+d.captain.name+'\nالهاتف: '+d.captain.phone+'\nالفترة: '+(d.from||'البداية')+' - '+(d.to||'الآن')+'\nالرصيد الافتتاحي: '+d.opening_balance+'\nله: '+d.totals.credit+' | عليه: '+d.totals.debit+'\nالرصيد النهائي: '+d.closing_balance+'\n\n'+d.rows.map(x=>[x.created_at,x.entry_type,x.description,x.reference_id,x.amount,x.running_balance].join(' | ')).join('\n');
+ win.document.body.append(pre);
+ const button=win.document.createElement('button');button.textContent='حفظ PDF / طباعة';button.onclick=()=>win.print();win.document.body.prepend(button);
+}
+async function openCaptainStatement(id){
   const from=prompt('تاريخ البداية YYYY-MM-DD (فارغ = كل الفترات)','');
   if(from===null)return;
   const to=prompt('تاريخ النهاية YYYY-MM-DD (فارغ = حتى الآن)','');
