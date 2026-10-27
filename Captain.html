@@ -1700,12 +1700,9 @@ body:has(#loginScreen:not(.hidden)) #appScreen{
 }
 </style>
 <style id="CAPTAIN_DISABLE_ROAD_TRANSITION_V1">
-#roadTransition,.road-transition{
-  display:none!important;
-  opacity:0!important;
-  visibility:hidden!important;
-  pointer-events:none!important;
-}
+#roadTransition,.road-transition{display:block!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+#roadTransition.active,.road-transition.active{display:block!important;opacity:1!important;visibility:visible!important}
+@media(prefers-reduced-motion:reduce){#roadTransition,.road-transition{display:none!important}}
 #bootScreen{
   z-index:1000!important;
 }
