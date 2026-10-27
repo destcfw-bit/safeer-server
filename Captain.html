@@ -1904,6 +1904,40 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
 @media(prefers-reduced-motion:reduce){#loginScreen.safeer-login-v3 .av3-login-card,#loginScreen.safeer-login-v3 .av3-login-card::before,#loginScreen.safeer-login-v3 .av3-login-card::after{animation:none!important}}
 </style>
 <style id="safeer-v3-brand-final">#loginScreen.safeer-login-v3 .av3-login-card{background:linear-gradient(145deg,#142235,#0a121e 64%,#1d2231)!important;border-color:rgba(233,173,76,.55)!important}#loginScreen.safeer-login-v3 .av3-story h2 em,#loginScreen.safeer-login-v3 .av3-wordmark b{color:#e9ad4c!important}#loginScreen.safeer-login-v3 .av3-form #loginBtn{background:linear-gradient(105deg,#9d631f,#e4a640 52%,#ac7429)!important;border-color:#f1c77b!important;color:#101a29!important}#loginScreen.safeer-login-v3 .av3-logo-wrap{background:radial-gradient(circle,#e9ad4c26,#0a1421 75%)!important}#loginScreen.safeer-login-v3 .av3-input-wrap .input{background:#0a1421!important;color:#fff!important;-webkit-text-fill-color:#fff!important}#loginScreen.safeer-login-v3 .av3-form .input::placeholder{color:#c1b6a9!important;-webkit-text-fill-color:#c1b6a9!important}#loginScreen.safeer-login-v3 .av3-atmosphere{filter:hue-rotate(42deg) saturate(.6)}#loginScreen.safeer-login-v3 .av3-brand img{object-fit:contain!important}</style>
+<style id="safeer-no-red-mobile-fix-20261028">
+/* Safeer identity: navy and amber, never Abshir red. Visual-only overrides. */
+:root{--red:#0b345a!important;--red2:#08243e!important;--rw-red:#0b345a!important;--rw-red2:#08243e!important;--gold:#e9a536!important;--cm-accent:#e9a536!important}
+html,body{max-width:100%;overflow-x:hidden!important;accent-color:#e9a536!important}
+#appScreen:not(.hidden){width:100%!important;max-width:100vw!important;min-width:0!important;overflow-x:clip!important}
+#appScreen .main-content,#appScreen main,#appScreen .app-container,#appScreen .v84-home,#appScreen .v84-home-greeting,#appScreen .v84-balance-card,#appScreen .v84-section,#appScreen .section,#appScreen .order-detail-card{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+#appScreen h1,#appScreen h2,#appScreen h3,#appScreen p{overflow-wrap:break-word}
+#appScreen .v84-home-greeting h2{font-size:clamp(21px,5vw,38px)!important;line-height:1.35!important;overflow-wrap:anywhere}
+#appScreen .v84-balance-copy strong{font-size:clamp(32px,9vw,58px)!important;overflow-wrap:anywhere}
+#appScreen .v84-balance-card{border-color:rgba(225,171,67,.45)!important;background:radial-gradient(ellipse at 83% 15%,rgba(233,165,54,.15),transparent 55%),linear-gradient(125deg,#203e59,#14283e 60%,#0d1d30)!important;box-shadow:0 18px 45px rgba(13,39,62,.18)!important}
+#appScreen .v84-home-greeting .eyebrow,#appScreen .section-kicker,#appScreen .top-brand h2{color:#a87b28!important}
+#appScreen .v84-balance-action,#appScreen .btn-primary{background:linear-gradient(125deg,#f5dfa7,#dba744)!important;color:#14263b!important;border-color:#e5c276!important}
+#appScreen .order-detail-card{border-color:#e5d7b9!important}
+#appScreen .order-detail-card:hover{border-color:#c8a157!important}
+#appScreen .order-detail-card .order-detail-title,#appScreen .order-detail-card strong{overflow-wrap:anywhere}
+#appScreen .order-detail-card [style*="#dc2626"]{color:#a66e1b!important}
+#roadTransition .road-edge{stroke:#e9a536!important;filter:drop-shadow(0 0 7px rgba(233,165,54,.7))!important}
+#roadTransition .road-light{stroke:rgba(233,165,54,.94)!important;filter:blur(5px)!important}
+#roadTransition .road-bed{stroke:#102943!important}
+#roadTransition .road-lane{stroke:rgba(248,236,204,.92)!important}
+#roadTransition .road-logo-glow{background:radial-gradient(circle,rgba(233,165,54,.35),rgba(233,165,54,.09) 45%,transparent 72%)!important}
+#roadTransition .road-orbit{border-color:rgba(233,165,54,.78)!important;box-shadow:0 0 20px rgba(233,165,54,.3)!important}
+#roadTransition .road-flare{background:linear-gradient(90deg,transparent,rgba(233,165,54,.16),rgba(255,235,175,.95),rgba(233,165,54,.16),transparent)!important;box-shadow:0 0 18px rgba(233,165,54,.35)!important}
+#roadTransition .road-logo{border-color:rgba(233,165,54,.7)!important;box-shadow:0 0 28px rgba(233,165,54,.45)!important}
+#appScreen .v84-home-greeting,#appScreen .v84-section{position:relative}
+@media(max-width:767px){
+#appScreen .app-container,#appScreen .main-content,#appScreen main{width:100%!important;max-width:100%!important;min-width:0!important;margin-inline:0!important}
+#appScreen .v84-balance-card{padding:20px 18px!important}
+#appScreen .v84-home-greeting h2{white-space:normal!important}
+#appScreen .order-detail-card{padding:13px!important}
+#appScreen .v84-balance-actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important}
+#appScreen .v84-balance-actions>*{min-width:0!important;flex:1 1 130px!important}
+}
+</style>
 </head>
 <style id="safeer-login-luxe">
 #loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
