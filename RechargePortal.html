@@ -7,28 +7,28 @@
   <title>بوابة شحن السفير</title>
   <style>
     :root{
-      --red:#b71920;--red2:#d92c34;--ink:#22252a;--muted:#7e8794;
-      --line:#efd6d8;--soft:#fff5f5;--panel:#fff;--bg:#fbf8f8;
+      --red:#b98631;--red2:#c88f36;--ink:#22252a;--muted:#7e8794;
+      --line:#efd6d8;--soft:#f9f4eb;--panel:#fff;--bg:#fbf8f8;
       --ok:#178a52;--warn:#a66a00;--shadow:0 18px 60px rgba(67,25,27,.09);
     }
     *{box-sizing:border-box}
     html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif;background:
-      radial-gradient(circle at 100% 8%,#ffe6e8 0 120px,transparent 121px),
-      radial-gradient(circle at 2% 72%,#fde9ea 0 95px,transparent 96px),
+      radial-gradient(circle at 100% 8%,#f9edda 0 120px,transparent 121px),
+      radial-gradient(circle at 2% 72%,#f7ebd9 0 95px,transparent 96px),
       var(--bg);color:var(--ink)}
     button,input,select{font:inherit}
     button{cursor:pointer}
     .hidden{display:none!important}
     .shell{width:min(1200px,calc(100% - 30px));margin:0 auto;padding:28px 0 50px}
-    .top{background:#fff;border:1px solid #f5e6e6;border-radius:22px;box-shadow:var(--shadow);
+    .top{background:#fff;border:1px solid #f3eadd;border-radius:22px;box-shadow:var(--shadow);
       min-height:92px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px}
     .brand{display:flex;align-items:center;gap:14px}
-    .logo{width:58px;height:58px;border-radius:16px;background:linear-gradient(145deg,#7d070b,#c5161e);
+    .logo{width:58px;height:58px;border-radius:16px;background:linear-gradient(145deg,#76501e,#d59a3b);
       color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
     .brand h1{margin:0;font-size:26px}
     .brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
     .userbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .pill{border:1px solid var(--line);background:#fff8f8;border-radius:999px;padding:10px 14px;font-weight:700}
+    .pill{border:1px solid var(--line);background:#faf7f0;border-radius:999px;padding:10px 14px;font-weight:700}
     .btn{border:0;border-radius:13px;padding:12px 16px;font-weight:800;transition:.18s transform,.18s opacity}
     .btn:active{transform:scale(.98)}
     .btn-red{background:linear-gradient(135deg,var(--red),var(--red2));color:#fff}
@@ -43,10 +43,10 @@
     .field{display:grid;gap:8px;margin:14px 0}
     .field label{font-weight:800;font-size:13px}
     .input{width:100%;border:1px solid #e9d5d6;background:#fff;border-radius:14px;padding:14px 15px;outline:none}
-    .input:focus{border-color:#d96d72;box-shadow:0 0 0 4px #fff0f0}
+    .input:focus{border-color:#d1a566;box-shadow:0 0 0 4px #f9f1e5}
     .login .btn{width:100%;padding:14px;margin-top:8px}
     .alert{border-radius:13px;padding:11px 13px;margin:12px 0;font-size:14px}
-    .alert-error{background:#fff0f0;border:1px solid #f0b5b8;color:#97131a}
+    .alert-error{background:#f9f1e5;border:1px solid #f0b5b8;color:#936326}
     .alert-ok{background:#effaf4;border:1px solid #b8e3ca;color:#0c7140}
     .nav{display:flex;gap:8px;margin-top:18px;background:#fff;border:1px solid var(--line);padding:8px;border-radius:18px;
       box-shadow:var(--shadow);overflow:auto}
@@ -59,7 +59,7 @@
     .search-row{display:grid;grid-template-columns:1fr auto;gap:10px}
     .results{margin-top:12px;display:grid;gap:8px;max-height:320px;overflow:auto}
     .captain{border:1px solid #eee0e1;border-radius:15px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff}
-    .captain.selected{border-color:#e45c63;background:#fff5f5}
+    .captain.selected{border-color:#d6a04d;background:#f9f4eb}
     .captain .name{font-weight:900}
     .captain .meta{font-size:12px;color:var(--muted);margin-top:4px}
     .balance{font-weight:900;white-space:nowrap}
@@ -67,7 +67,7 @@
     .packages{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
     .package{border:1px solid var(--line);background:#fff;border-radius:16px;padding:16px 8px;text-align:center;font-weight:900}
     .package strong{display:block;font-size:23px;margin-bottom:3px}
-    .package.selected{border-color:#e14f57;background:#fff0f0;color:var(--red);box-shadow:inset 0 0 0 1px #e14f57}
+    .package.selected{border-color:#d59a3b;background:#f9f1e5;color:var(--red);box-shadow:inset 0 0 0 1px #d59a3b}
     .custom-amount{margin-top:12px;padding:14px;border:1px dashed #db8f93;background:#fffafa;border-radius:16px}
     .custom-amount .custom-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
     .custom-amount .custom-head strong{color:var(--red)}
@@ -75,11 +75,11 @@
     .custom-amount-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}
     .custom-amount .input{direction:ltr;text-align:center;font-weight:900;font-size:19px}
     .custom-amount .currency{font-weight:900;color:var(--red);white-space:nowrap}
-    .custom-amount.active{border-style:solid;border-color:#e14f57;background:#fff0f0;box-shadow:inset 0 0 0 1px #f1b8bb}
+    .custom-amount.active{border-style:solid;border-color:#d59a3b;background:#f9f1e5;box-shadow:inset 0 0 0 1px #f1b8bb}
 
     .create-area{display:flex;gap:10px;margin-top:16px}
     .create-area .btn{flex:1}
-    .code-box{display:none;margin-top:15px;border:1px dashed #dd7378;background:#fff7f7;border-radius:18px;padding:18px;text-align:center}
+    .code-box{display:none;margin-top:15px;border:1px dashed #d5aa6b;background:#f9f5ed;border-radius:18px;padding:18px;text-align:center}
     .code-box.show{display:block}
     .code-value{font:900 25px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;letter-spacing:1px}
     .code-box .who{color:var(--muted);font-size:13px;margin:7px 0 12px}
@@ -93,7 +93,7 @@
     .table-wrap{overflow:auto;border:1px solid #f0e0e1;border-radius:16px}
     table{width:100%;border-collapse:collapse;min-width:800px;background:#fff}
     th,td{padding:12px;border-bottom:1px solid #f2e7e7;text-align:right;font-size:13px}
-    th{background:#fff7f7;color:#6f2b2e;position:sticky;top:0}
+    th{background:#f9f5ed;color:#6f2b2e;position:sticky;top:0}
     td.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;text-align:right;font-weight:800}
     .badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}
     .unused{background:#fff2d9;color:#946000}.used{background:#eaf8ef;color:#0e7743}.cancelled{background:#f2f2f2;color:#666}
