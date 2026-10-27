@@ -2831,7 +2831,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
     if(String(producer.id)===String(consumer.id)){await setEventStatus(id,"error","المنتج والمستهلك نفس الكابتن");return {error:"same_captain"};}
 
     const qty=components.reduce((a,x)=>a+x.quantity,0);
-    if(qty>10){
+    if(qty>50){
       const review=reviewContext("large_quantity",`عدد كبير (${qty}) — يحتاج تأكيد المحاسب قبل الجرد`,{producer,consumer,requestText,doneMessageId:done,reactionId:id,originalMessageId:original});
       await issueSuspiciousReaction({reactionId:id,doneMessageId:done,originalMessageId:original,producerId:String(producer.id),producerName:producer.name,producerPhone:displayPhone(producer.phone),consumerId:String(consumer.id),consumerName:consumer.name,consumerPhone:displayPhone(consumer.phone),components,type:components.length>1?"MIXED":components[0].type,quantity:qty,requestText,reasons:[review.reason]});
       await setEventStatus(id,"waiting_review",review.reason);
