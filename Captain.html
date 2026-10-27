@@ -1939,6 +1939,30 @@ html,body{max-width:100%;overflow-x:hidden!important;accent-color:#e9a536!import
 }
 </style>
 <style id="safeer-official-logo-visible">.brand-logo-box img,.abshir-logo-mark,img.brand-logo{display:block!important}.brand-logo-box::after{content:none!important;display:none!important}.brand-logo{content:url("/assets/safeer-official-logo.png")!important;object-fit:contain!important}#loginScreen.safeer-login-v3 .av3-logo-wrap img{content:url("/assets/safeer-official-logo.png")!important}#roadTransition.active .road-logo{content:url("/assets/safeer-official-logo.png")!important;object-fit:contain!important}</style>
+
+<style id="safeer-premium-cinematic-v3">
+/* Visual-only enhancements: no ledger or transaction changes. */
+#loginScreen.safeer-login-v3{isolation:isolate;--sx:50%;--sy:45%}
+#loginScreen.safeer-login-v3::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 48% 42% at var(--sx) var(--sy),rgba(233,154,34,.11),transparent 75%),radial-gradient(ellipse 58% 60% at 83% 10%,rgba(23,79,112,.24),transparent 80%);transition:background-position .3s ease}
+#loginScreen.safeer-login-v3 .av3-atmosphere{pointer-events:none}
+#loginScreen.safeer-login-v3 .av3-atmosphere::after{content:"";position:absolute;inset:-20%;pointer-events:none;background-image:radial-gradient(circle,rgba(245,201,125,.55) 1px,transparent 1.7px),radial-gradient(circle,rgba(115,177,218,.32) 1px,transparent 1.6px);background-size:97px 113px,157px 149px;background-position:12px 18px,44px 71px;opacity:.32;animation:safeerStardrift 38s linear infinite}
+@keyframes safeerStardrift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-46px,32px,0)}}
+#loginScreen.safeer-login-v3 .av3-logo-wrap{perspective:900px;transform-style:preserve-3d;box-shadow:0 0 34px rgba(233,154,34,.17),0 18px 48px rgba(0,0,0,.35)!important}
+#loginScreen.safeer-login-v3 .av3-logo-wrap img{display:block;object-fit:contain!important;transform:rotateY(-7deg) rotateX(5deg);animation:safeerLogoFloat 6s ease-in-out infinite;filter:drop-shadow(0 12px 20px rgba(0,0,0,.3))!important}
+#loginScreen.safeer-login-v3 .av3-logo-wrap::after{content:"";position:absolute;inset:5px;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,228,167,.22) 48%,transparent 65%);transform:translateX(-145%);animation:safeerLogoShine 6s ease-in-out infinite}
+@keyframes safeerLogoFloat{0%,100%{transform:translateY(0) rotateY(-7deg) rotateX(5deg)}50%{transform:translateY(-7px) rotateY(7deg) rotateX(-3deg)}}
+@keyframes safeerLogoShine{0%,23%,100%{transform:translateX(-145%)}45%,65%{transform:translateX(145%)}}
+#appScreen .v84-balance-card{isolation:isolate;transform-style:preserve-3d;background:radial-gradient(circle at 84% 9%,rgba(233,154,34,.18),transparent 39%),radial-gradient(circle at 8% 94%,rgba(46,128,171,.22),transparent 45%),linear-gradient(135deg,#102a49 0%,#091b31 58%,#06111f 100%)!important;border:1px solid rgba(233,154,34,.55)!important;box-shadow:0 24px 55px rgba(5,22,44,.24),inset 0 1px 0 rgba(255,255,255,.12)!important;transition:transform .3s ease,box-shadow .3s ease}
+#appScreen .v84-balance-card::before{border-top-color:rgba(233,154,34,.75)!important;filter:drop-shadow(0 0 9px rgba(233,154,34,.5))!important}
+#appScreen .v84-balance-card::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:linear-gradient(110deg,transparent 26%,rgba(255,226,165,.11) 48%,transparent 65%);transform:translateX(-125%);animation:safeerBalanceGlint 9s ease-in-out infinite}
+#appScreen .v84-balance-card .v84-balance-content{position:relative;z-index:1}
+#appScreen .v84-balance-card #balanceValue{font-variant-numeric:tabular-nums;text-shadow:0 0 26px rgba(233,154,34,.2)}
+#appScreen .v84-balance-card .captain-classification{border-color:rgba(233,154,34,.25)}
+@keyframes safeerBalanceGlint{0%,55%,100%{transform:translateX(-125%)}75%{transform:translateX(125%)}}
+@media(hover:hover) and (pointer:fine){#appScreen .v84-balance-card:hover{transform:translateY(-3px);box-shadow:0 28px 64px rgba(5,22,44,.32),0 0 24px rgba(233,154,34,.1)!important}}
+@media(max-width:600px){#loginScreen.safeer-login-v3 .av3-atmosphere::after{opacity:.2;animation-duration:60s}#appScreen .v84-balance-card{transform:none!important}}
+@media(prefers-reduced-motion:reduce){#loginScreen.safeer-login-v3 .av3-atmosphere::after,#loginScreen.safeer-login-v3 .av3-logo-wrap img,#loginScreen.safeer-login-v3 .av3-logo-wrap::after,#appScreen .v84-balance-card::after{animation:none!important}#appScreen .v84-balance-card{transition:none!important}}
+</style>
 </head>
 <style id="safeer-login-luxe">
 #loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
@@ -3528,6 +3552,10 @@ panels.forEach(p=>watcher.observe(p,{attributes:true,attributeFilter:['class']})
 
 window.addEventListener('pageshow',()=>{leaving=false;document.body.classList.remove('cm-leaving')});
 })();
+</script>
+
+<script id="safeer-premium-cinematic-interaction">
+(()=>{const login=document.getElementById('loginScreen');if(!login||!window.matchMedia('(pointer:fine)').matches||window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;let frame=0;login.addEventListener('pointermove',e=>{if(frame)return;frame=requestAnimationFrame(()=>{const rect=login.getBoundingClientRect();login.style.setProperty('--sx',((e.clientX-rect.left)/rect.width*100).toFixed(1)+'%');login.style.setProperty('--sy',((e.clientY-rect.top)/rect.height*100).toFixed(1)+'%');frame=0})},{passive:true})})();
 </script>
 </body>
 </html>
