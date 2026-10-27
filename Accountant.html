@@ -6610,6 +6610,17 @@ function label(){toggle.textContent=enabled?'🔊 المؤثرات: تعمل':'�
 toggle.addEventListener('click',()=>{enabled=!enabled;localStorage.setItem(key,enabled?'on':'off');label();sound('click')});document.body.append(toggle);
 function sound(type){if(!enabled)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const t=audio.currentTime,osc=audio.createOscillator(),gain=audio.createGain();osc.type=type==='transition'?'sine':'triangle';osc.frequency.setValueAtTime(type==='transition'?420:620,t);osc.frequency.exponentialRampToValueAtTime(type==='transition'?160:860,t+.16);gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.055,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+.19);osc.connect(gain);gain.connect(audio.destination);osc.start(t);osc.stop(t+.2)}catch(_){}}
 document.addEventListener('click',e=>{if(e.target.closest('#cm-sound'))return;const a=e.target.closest('a[href]');if(a&&!e.defaultPrevented&&e.button===0&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey&&a.target!=='_blank'&&!a.hasAttribute('download')){let u;try{u=new URL(a.href,location.href)}catch(_){}if(u&&u.origin===location.origin&&u.href!==location.href&&!(u.pathname===location.pathname&&u.search===location.search)&&!leaving){e.preventDefault();leaving=true;sound('transition');if(!reduced)document.body.classList.add('cm-leaving');setTimeout(()=>location.assign(u.href),reduced?0:270);return}}const control=e.target.closest('button,[role="tab"],[data-tab]');if(control&&control!==toggle&&!control.disabled)sound('click')},true);
+
+// Internal SPA navigation: existing pages switch active panels without changing URL.
+const motionCss=document.createElement('style');motionCss.id='cm-internal-navigation-v2';
+motionCss.textContent=`@keyframes cm-panel-reveal{from{opacity:.25;transform:perspective(1100px) translateY(20px) rotateX(5deg) scale(.975);filter:blur(5px)}to{opacity:1;transform:perspective(1100px) translateY(0) rotateX(0) scale(1);filter:blur(0)}}@keyframes cm-panel-glow{from{box-shadow:inset 0 3px 0 var(--cm-accent),0 0 26px color-mix(in srgb,var(--cm-accent),transparent 80%)}to{box-shadow:none}}.cm-panel-enter{animation:cm-panel-reveal .53s cubic-bezier(.16,.85,.22,1) both,cm-panel-glow .65s ease-out both!important;transform-origin:50% 0!important}@media(prefers-reduced-motion:reduce){.cm-panel-enter{animation:none!important}}`;
+document.head.append(motionCss);
+const panels=Array.from(document.querySelectorAll('.view'));
+const previous=new WeakMap(panels.map(p=>[p,p.classList.contains('active')]));
+let ready=false;setTimeout(()=>{ready=true},650);
+const watcher=new MutationObserver(records=>{for(const record of records){const panel=record.target;if(!(panel instanceof Element))continue;const active=panel.classList.contains('active'),was=previous.get(panel);if(active===was)continue;previous.set(panel,active);if(active&&ready){if(!reduced){panel.classList.remove('cm-panel-enter');void panel.offsetWidth;panel.classList.add('cm-panel-enter');setTimeout(()=>panel.classList.remove('cm-panel-enter'),690)}sound('transition')}}});
+panels.forEach(p=>watcher.observe(p,{attributes:true,attributeFilter:['class']}));
+
 window.addEventListener('pageshow',()=>{leaving=false;document.body.classList.remove('cm-leaving')});
 })();
 </script>
