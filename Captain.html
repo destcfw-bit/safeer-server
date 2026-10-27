@@ -2156,9 +2156,7 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
   }
 
   function playRoadTransition(onMiddle,options={}){
-    // Red/white portal: cinematic road overlay disabled. Keep view switching logic intact.
-    if(typeof onMiddle==='function'){ try{onMiddle();}catch{} }
-    return;
+    // Cinematic transition is active for internal captain navigation.
     const overlay=$('roadTransition');
     if(!overlay||prefersReducedMotion()){
       if(typeof onMiddle==='function')onMiddle();
