@@ -3034,14 +3034,14 @@ export async function reconcileMixed40(userId){
   return {netAdjustment,adjusted,found:q.rowCount,errors,weekStart:week.start,weekEnd:week.end,disabled:true,rule:'اقتطاع 40 حركة ملغى — أرضية 1.50 الخميس 9م فقط'};
 }
 
-// ----- Weekly floor: Thursday 16:00 (Asia/Amman), exactly once per captain/week -----
+// ----- Weekly floor: Thursday 12:00 (Asia/Amman), exactly once per captain/week -----
 let thursdayDeductionTimer=null;
-function ammanThursdayFloorScheduledAt(weekEnd){return new Date(`${weekEnd}T16:00:00+03:00`)}
+function ammanThursdayFloorScheduledAt(weekEnd){return new Date(`${weekEnd}T12:00:00+03:00`)}
 
 function scheduledFloorWeek(now=new Date()){
   const p=jordanParts(now);
   const today=`${p.year}-${p.month}-${p.day}`;
-  if(p.weekday==="Thu"&&Number(p.hour)>=21){
+  if(p.weekday==="Thu"&&Number(p.hour)>=12){
     const week=activeWeek(now);
     return {...week,scheduledAt:ammanThursdayFloorScheduledAt(week.end),catchup:false};
   }
@@ -3094,13 +3094,13 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
   const cleanStart=await getCleanStartState();
   if(cleanStart.status!=="COMPLETED"||cleanStart.automaticStatus!=="LIVE")return {ok:true,skipped:true,reason:"clean_start_not_live"};
   const target=scheduledFloorWeek(now);
-  if(!target)return {ok:true,skipped:true,reason:"outside_thursday_21_or_friday_catchup"};
+  if(!target)return {ok:true,skipped:true,reason:"outside_thursday_12_or_friday_catchup"};
 
   const {start,end,scheduledAt,catchup}=target;
   const lockClient=await db.connect();
   let locked=false;
   try{
-    const lockKey=`abshir_weekly_floor_21:${end}`;
+    const lockKey=`abshir_weekly_floor_12:${end}`;
     const lk=await lockClient.query(`SELECT pg_try_advisory_lock(hashtext($1)) AS locked`,[lockKey]);
     if(!lk.rows[0]?.locked)return {ok:true,skipped:true,reason:"scheduler_already_running",weekEnd:end};
     locked=true;
@@ -3113,17 +3113,8 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
     const startAt=new Date(Math.max(weekStartAt.getTime(),Number.isFinite(resetAt.getTime())?resetAt.getTime():weekStartAt.getTime())).toISOString();
     const endExclusive=new Date(new Date(`${end}T00:00:00+03:00`).getTime()+24*60*60*1000).toISOString();
 
-    const caps=await db.query(`
-      SELECT DISTINCT c.id,c.name
-        FROM captains c
-        JOIN ledger_entries le ON le.captain_id=c.id
-       WHERE c.status<>'disabled'
-         AND le.entry_type IN ('PRODUCTION','CONSUMPTION')
-         AND COALESCE(le.reference_type,'')<>'green_partial'
-         AND le.reversed_at IS NULL
-         AND le.created_at >= $1::timestamptz AND le.created_at < $2::timestamptz
-         AND COALESCE(le.metadata->>'type','') IN ('PASSENGER','ORDER')
-    `,[startAt,endExclusive]);
+    // SAFEER: all enabled captains, even without activity this week.
+    const caps=await db.query(`SELECT c.id,c.name FROM captains c WHERE c.status<>'disabled'`);
 
     let applied=0,duplicates=0,duplicateRepairs=0,failed=0;const errors=[];
     for(const c of caps.rows){
@@ -3160,9 +3151,9 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
         // Guard 2: deterministic reference + DB unique index protects concurrent/replayed ticks.
         await createMovement({
           captainId:c.id,kind:"weekly_deduction",amount:FLOOR,
-          referenceType:"weekly_floor_thursday_21",referenceId:`${end}:${c.id}:thu21:100`,
-          description:`أرضية أسبوعية 1.00 د.أ — الخميس 9:00 مساءً — الأسبوع ${end}`,
-          metadata:{type:"WEEKLY_FLOOR",weekStart:start,weekEnd:end,source:"THURSDAY_21_SCHEDULER",scheduledAt:scheduledAt.toISOString(),amount:FLOOR,catchup:Boolean(catchup)},
+          referenceType:"weekly_floor_thursday_12",referenceId:`${end}:${c.id}:thu12:100`,
+          description:`أرضية أسبوعية 1.00 د.أ — الخميس 12:00 ظهرًا — الأسبوع ${end}`,
+          metadata:{type:"WEEKLY_FLOOR",weekStart:start,weekEnd:end,source:"THURSDAY_12_SCHEDULER",scheduledAt:scheduledAt.toISOString(),amount:FLOOR,catchup:Boolean(catchup)},
           createdBy:createdBy||null,occurredAt:scheduledAt.toISOString()
         });
         applied++;await syncCaptainBalanceState(c.id).catch(()=>null);
@@ -3172,10 +3163,10 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
       }
     }
     const details={weekStart:start,weekEnd:end,scheduledAt:scheduledAt.toISOString(),catchup:Boolean(catchup),eligible:caps.rowCount,applied,duplicates,duplicateRepairs,failed,amount:FLOOR,errors};
-    await audit(createdBy||null,"weekly.floor.thursday_21","system",end,details);
+    await audit(createdBy||null,"weekly.floor.thursday_12","system",end,details);
     return {ok:failed===0,...details};
   }finally{
-    if(locked){try{await lockClient.query(`SELECT pg_advisory_unlock(hashtext($1))`,[`abshir_weekly_floor_21:${target.end}`])}catch{}}
+    if(locked){try{await lockClient.query(`SELECT pg_advisory_unlock(hashtext($1))`,[`abshir_weekly_floor_12:${target.end}`])}catch{}}
     lockClient.release();
   }
 }
