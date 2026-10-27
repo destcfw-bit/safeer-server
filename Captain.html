@@ -1963,7 +1963,7 @@ html,body{max-width:100%;overflow-x:hidden!important;accent-color:#e9a536!import
 @media(max-width:600px){#loginScreen.safeer-login-v3 .av3-atmosphere::after{opacity:.2;animation-duration:60s}#appScreen .v84-balance-card{transform:none!important}}
 @media(prefers-reduced-motion:reduce){#loginScreen.safeer-login-v3 .av3-atmosphere::after,#loginScreen.safeer-login-v3 .av3-logo-wrap img,#loginScreen.safeer-login-v3 .av3-logo-wrap::after,#appScreen .v84-balance-card::after{animation:none!important}#appScreen .v84-balance-card{transition:none!important}}
 </style>
-</head>
+<style id="safeer-official-logo-final">#loginScreen .av3-logo-wrap img{content:url("/assets/safeer-official-logo.png")!important;object-fit:contain!important}#appScreen .brand-logo,#bootScreen .brand-logo,#appScreen img.brand-logo,.brand-logo-box img{content:url("/assets/safeer-official-logo.png")!important;display:block!important;object-fit:contain!important}.brand-logo-box::after{content:none!important;display:none!important}#roadTransitionLogo{content:url("/assets/safeer-official-logo.png")!important}</style></head>
 <style id="safeer-login-luxe">
 #loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
 #loginScreen.login-shell.hidden{display:none!important}
@@ -2327,8 +2327,8 @@ html,body{max-width:100%;overflow-x:hidden!important;accent-color:#e9a536!import
   function syncRoadTransitionLogo(){
     const target=$('roadTransitionLogo');
     if(!target)return;
-    const source=document.querySelector('#bootScreen .brand-logo, #loginScreen .brand-logo, #appScreen .brand-logo, .brand-logo');
-    if(source&&source.src&&target.src!==source.src)target.src=source.src;
+    const officialLogo='/assets/safeer-official-logo.png';
+    if(target.getAttribute('src')!==officialLogo)target.setAttribute('src',officialLogo);
   }
 
   function clearRoadTransition(){
