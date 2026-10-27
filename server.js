@@ -218,7 +218,7 @@ app.get("/assets/ezwa-logo.png", async (request, reply) => {
   return reply.type("image/png").header("Cache-Control","public, max-age=86400").send(image);
 });
 
-app.get("/", async (request, reply) => reply.redirect("/accountant"));
+app.get("/", async (request, reply) => reply.redirect("/captain"));
 
 app.get("/health", async (request, reply) => {
   // Always test dependencies with strict timeouts, even before full readiness.
