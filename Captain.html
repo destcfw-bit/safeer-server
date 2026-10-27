@@ -2805,8 +2805,16 @@ html,body{max-width:100%;overflow-x:hidden!important;accent-color:#e9a536!import
       const consumerId=String(transaction.ConsumerID||'');
       const role=producerId&&producerId===captainId?'أنت المنتج':consumerId&&consumerId===captainId?'أنت المستهلك':production?'إنتاج على حسابك':'استهلاك على حسابك';
       const participantCards=[];
-      if(transaction.ProducerName||transaction.ProducerPhone)participantCards.push(`<div class="order-person producer"><span>المنتج</span><b>${esc(transaction.ProducerName||'غير معروف')}</b><small>${esc(transaction.ProducerPhone||'رقم غير مسجل')}</small></div>`);
-      if(transaction.ConsumerName||transaction.ConsumerPhone)participantCards.push(`<div class="order-person consumer"><span>المستهلك</span><b>${esc(transaction.ConsumerName||'غير معروف')}</b><small>${esc(transaction.ConsumerPhone||'رقم غير مسجل')}</small></div>`);
+      const movementType=String(transaction.Type||'').toUpperCase();
+      const isOrderMovement=!/RECHARGE|TOPUP|CHARGE|WEEKLY_FLOOR|FRIDAY_SETTLEMENT|TRANSFER|WITHDRAW|ADJUSTMENT|REFUND/.test(movementType);
+      if(isOrderMovement){
+        const producerName=transaction.ProducerName||((producerId&&producerId===captainId)?state.captain?.fullName:'')||'الاسم غير متوفر';
+        const consumerName=transaction.ConsumerName||((consumerId&&consumerId===captainId)?state.captain?.fullName:'')||'الاسم غير متوفر';
+        const producerPhone=transaction.ProducerPhone||((producerId&&producerId===captainId)?state.captain?.phone:'')||'رقم غير متوفر';
+        const consumerPhone=transaction.ConsumerPhone||((consumerId&&consumerId===captainId)?state.captain?.phone:'')||'رقم غير متوفر';
+        participantCards.push(`<div class="order-person producer cm-order-party"><span>🟢 أنتج الطلب</span><b>${esc(producerName)}</b><small>${esc(producerPhone)}</small></div>`);
+        participantCards.push(`<div class="order-person consumer cm-order-party"><span>🔴 استهلك الطلب</span><b>${esc(consumerName)}</b><small>${esc(consumerPhone)}</small></div>`);
+      }
       const participants=participantCards.length?`<div class="order-people">${participantCards.join('')}</div>`:'';
       return `<article class="order-detail-card ${production?'production-card':'consumption-card'}">
         <div class="order-detail-head"><div class="order-detail-badges">${captainMovementBadge(transaction.Direction)}<span class="badge badge-unused">${movementTypeLabel(transaction.Type)}</span></div><span class="order-detail-date">${date(transaction.CreatedAt)}</span></div>
