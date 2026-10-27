@@ -1791,7 +1791,120 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
  border-left-color:#9e824f!important;
 }
 </style>
-<link rel="icon" type="image/svg+xml" href="/assets/safeer-logo.svg"><style id="safeer-brand-override">:root{--gold:#E99A22;--red:#0B2341;--primary:#0B2341;--accent:#E99A22}body{accent-color:#E99A22}button.primary,.btn-primary{background:#0B2341!important;color:#fff!important}.brand-logo{content:url("/assets/safeer-logo.svg")!important}</style><style>.withdrawal-balance-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.withdrawal-balance-actions .btn{position:static!important;min-height:42px;border-radius:12px;padding:10px 16px!important}.withdrawal-balance-actions #captainWithdrawalToggle{background:#d7ad54;color:#192330;border:1px solid #e4c57e}@media(max-width:500px){.withdrawal-balance-actions .btn{flex:1;min-width:130px}}</style><style>#withdrawalDismiss{background:#d7ad54;color:#1b2736;border:0;border-radius:10px;padding:10px 25px;font-weight:700}#withdrawalDismiss:disabled{opacity:.6}</style></head>
+<link rel="icon" type="image/svg+xml" href="/assets/safeer-logo.svg"><style id="safeer-brand-override">:root{--gold:#E99A22;--red:#0B2341;--primary:#0B2341;--accent:#E99A22}body{accent-color:#E99A22}button.primary,.btn-primary{background:#0B2341!important;color:#fff!important}.brand-logo{content:url("/assets/safeer-logo.svg")!important}</style><style>.withdrawal-balance-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.withdrawal-balance-actions .btn{position:static!important;min-height:42px;border-radius:12px;padding:10px 16px!important}.withdrawal-balance-actions #captainWithdrawalToggle{background:#d7ad54;color:#192330;border:1px solid #e4c57e}@media(max-width:500px){.withdrawal-balance-actions .btn{flex:1;min-width:130px}}</style><style>#withdrawalDismiss{background:#d7ad54;color:#1b2736;border:0;border-radius:10px;padding:10px 25px;font-weight:700}#withdrawalDismiss:disabled{opacity:.6}</style><style id="safeer-login-v3-full-rebuild">
+/* Login V3: a fully coded UI. Scope every rule to the login screen. */
+#loginScreen.safeer-login-v3:not(.hidden){position:relative!important;isolation:isolate!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:stretch!important;min-height:100svh!important;padding:24px clamp(16px,4vw,64px) 18px!important;background:#08090f!important;overflow:hidden!important;perspective:none!important;color:#fff;font-family:inherit}
+#loginScreen.safeer-login-v3::before{content:"";position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse at 76% 48%,#bc812d2c,transparent 50%),radial-gradient(ellipse at 16% 78%,#5f0a2245,transparent 55%),linear-gradient(125deg,#08090f,#15101a 56%,#07080e)}
+#loginScreen .av3-atmosphere{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+#loginScreen .av3-horizon{position:absolute;inset:10% -10% 0;background:repeating-linear-gradient(90deg,transparent 0 10%,#bc812d10 10.1%,transparent 10.3%),radial-gradient(ellipse at 50% 100%,#bc812d24,transparent 60%);mask-image:linear-gradient(to bottom,transparent,#000 40%,transparent)}
+#loginScreen .av3-beams{position:absolute;width:900px;height:900px;left:-400px;top:-430px;border:1px solid #bc812d2d;border-radius:50%;box-shadow:0 0 0 100px #bc812d05,0 0 0 200px #bc812d06,0 0 0 300px #bc812d05;animation:av3Breathe 8s ease-in-out infinite}
+#loginScreen .av3-ground{position:absolute;bottom:-230px;left:50%;transform:translateX(-50%) perspective(450px) rotateX(65deg);width:1100px;height:520px;border-radius:50%;background:repeating-radial-gradient(ellipse,#bc812d1e 0 2px,transparent 3px 62px);filter:drop-shadow(0 0 25px #bc812d55)}
+#loginScreen .av3-orbit{position:absolute;border:1px solid #bc812d2a;border-radius:50%;animation:av3Breathe 7s ease-in-out infinite}
+#loginScreen .av3-orbit-one{width:350px;height:350px;right:-180px;top:30%}
+#loginScreen .av3-orbit-two{width:170px;height:170px;left:8%;bottom:14%;animation-delay:-3s}
+#loginScreen .av3-top,#loginScreen .av3-bottom{width:min(1280px,100%);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;z-index:2}
+#loginScreen .av3-wordmark{display:flex;align-items:center;gap:10px;direction:ltr}
+#loginScreen .av3-wordmark b{display:block;font-size:20px;letter-spacing:5px;color:#e9ad4c}
+#loginScreen .av3-wordmark small{font-size:8px;letter-spacing:3px;color:#b9aeb9}
+#loginScreen .av3-crown{font-size:31px;color:#e9ad4c}
+#loginScreen .av3-top-tag{display:flex;align-items:center;gap:8px;color:#d8c6ce;font-size:12px;background:#ffffff08;border:1px solid #ffffff17;border-radius:50px;padding:10px 15px}
+#loginScreen .av3-top-tag i,#loginScreen .av3-card-indicator i{width:7px;height:7px;background:#45dd92;border-radius:50%;box-shadow:0 0 12px #45dd92;display:inline-block}
+#loginScreen .av3-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(370px,510px);gap:clamp(35px,6vw,100px);align-items:center;max-width:1160px;width:100%;margin:32px auto;z-index:1}
+#loginScreen .av3-story{padding:20px 10px 20px 0;max-width:560px}
+#loginScreen .av3-eyebrow{display:flex;align-items:center;gap:9px;color:#e9ad4c;font-weight:800;font-size:13px}
+#loginScreen .av3-eyebrow span{width:26px;height:2px;background:#e9ad4c}
+#loginScreen .av3-story h2{font-size:clamp(44px,5.8vw,84px);line-height:1.18;letter-spacing:-2px;margin:18px 0 20px;font-weight:950;color:#fff}
+#loginScreen .av3-story h2 em{font-style:normal;color:#e9ad4c;text-shadow:0 0 40px #bc812d55}
+#loginScreen .av3-story>p{max-width:400px;font-size:17px;line-height:2;color:#bdb4c1}
+#loginScreen .av3-feature-list{display:flex;gap:12px;flex-wrap:wrap;margin-top:35px}
+#loginScreen .av3-feature-list>div{display:flex;flex-direction:column;gap:6px;min-width:125px;padding:17px 15px;border:1px solid #e9ad4c30;border-radius:17px;background:linear-gradient(140deg,#ffffff0d,#fa23400b);backdrop-filter:blur(8px)}
+#loginScreen .av3-feature-list span{font-size:24px;color:#e9ad4c}
+#loginScreen .av3-feature-list b{font-size:13px;color:white}
+#loginScreen .av3-feature-list small{font-size:11px;color:#ada3af}
+#loginScreen .av3-story-foot{font-size:10px;letter-spacing:3px;color:#766f7c;margin-top:32px;direction:ltr;text-align:right}
+#loginScreen .av3-login-card{position:relative!important;max-width:none!important;width:100%!important;padding:26px clamp(22px,3vw,39px) 23px!important;background:linear-gradient(155deg,#211923ee,#101018fa 72%,#180e18f7)!important;border:1px solid #fb426060!important;border-radius:28px!important;box-shadow:0 28px 90px #000a,0 0 55px #bc812d20,inset 0 1px 0 #ffffff1b!important;backdrop-filter:blur(24px);transform:none!important;animation:av3Enter .65s ease-out both!important;overflow:hidden!important}
+#loginScreen .av3-login-card::before{content:""!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;border:none!important;border-radius:inherit!important;background:linear-gradient(110deg,transparent 20%,#ffffff09 45%,transparent 60%)!important;animation:none!important;pointer-events:none!important}
+#loginScreen .av3-login-card::after{display:none!important}
+#loginScreen .av3-card-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:17px}
+#loginScreen .av3-card-kicker{font-size:11px;color:#e9ad4c;font-weight:800}
+#loginScreen .av3-card-indicator{display:flex;align-items:center;gap:7px;font-size:10px;color:#b5adb8}
+#loginScreen .av3-brand{border:none!important;padding:0!important;margin:0 0 18px!important;text-align:center!important}
+#loginScreen .av3-logo-wrap{width:136px;height:136px;margin:0 auto 13px;border:1px solid #e9ad4c40;border-radius:26px;background:radial-gradient(circle,#d51e3528,#0c0c15 70%);display:grid;place-items:center;box-shadow:0 0 30px #bc812d30}
+#loginScreen .av3-brand img{width:116px!important;height:116px!important;max-height:none!important;max-width:none!important;object-fit:contain!important;border-radius:17px!important;margin:0!important;filter:drop-shadow(0 0 12px #ec21464d)!important;animation:none!important;box-shadow:none!important}
+#loginScreen .av3-brand h1{font-size:30px!important;line-height:1.5!important;margin:0!important;font-weight:950!important;color:#fff!important}
+#loginScreen .av3-brand h1 span{font-size:24px}
+#loginScreen .av3-brand p{color:#bfb5c0!important;font-size:13px!important;line-height:1.8!important;margin:3px 0 0!important}
+#loginScreen .av3-form{gap:15px!important;margin-top:0!important}
+#loginScreen .av3-form .field{gap:7px!important}
+#loginScreen .av3-form label{font-size:12px!important;color:#eee8ee!important}
+#loginScreen .av3-input-wrap{position:relative;display:flex;align-items:center}
+#loginScreen .av3-input-wrap>span{position:absolute;right:16px;z-index:1;font-size:18px;color:#ef6078;pointer-events:none}
+#loginScreen .av3-form .input{width:100%;height:53px!important;min-height:53px!important;border-radius:13px!important;background:#090d16db!important;border:1px solid #ffffff2b!important;color:#fff!important;padding:12px 46px 12px 16px!important;box-shadow:inset 0 1px 8px #0005!important;font-size:15px!important}
+#loginScreen .av3-form .input:focus{border-color:#e9ad4c!important;box-shadow:0 0 0 3px #bc812d29,0 0 18px #bc812d2c!important}
+#loginScreen .av3-form .input::placeholder{color:#838090!important}
+#loginScreen .av3-form #loginBtn{display:flex;align-items:center;justify-content:center;gap:13px;width:100%;min-height:55px!important;margin-top:5px!important;border-radius:13px!important;border:1px solid #e9ad4c!important;background:linear-gradient(105deg,#bc812d,#bc812d 55%,#bc812d)!important;color:#fff!important;box-shadow:0 10px 30px #bc812d44,inset 0 1px 0 #ffffff55!important;font-size:15px!important;font-weight:900!important}
+#loginScreen .av3-form #loginBtn:hover{filter:brightness(1.1);transform:translateY(-2px)!important}
+#loginScreen .av3-form .hint{font-size:10px!important;color:#ada3b0!important;line-height:1.8!important;text-align:center!important}
+#loginScreen .av3-divider{display:flex;align-items:center;gap:12px;color:#847985;font-size:11px}
+#loginScreen .av3-divider::before,#loginScreen .av3-divider::after{content:"";height:1px;flex:1;background:#ffffff1b}
+#loginScreen .av3-form #installAppLoginBtn{background:#ffffff0a!important;border:1px solid #ffffff29!important;color:#fff!important;border-radius:12px!important;min-height:47px!important}
+#loginScreen .av3-card-foot{border-top:1px solid #ffffff13;margin-top:20px;padding-top:15px;display:flex;justify-content:space-between;gap:10px;font-size:10px;color:#8e8793}
+#loginScreen .av3-bottom{font-size:11px;color:#817985;direction:ltr}
+#loginScreen .av3-bottom b{color:#e9ad4c}
+@keyframes av3Enter{from{opacity:0;transform:translateY(28px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes av3Breathe{50%{opacity:.5;filter:brightness(1.5)}}
+@media(max-width:850px){#loginScreen .av3-layout{grid-template-columns:1fr;max-width:530px;gap:14px;margin:18px auto}#loginScreen .av3-story{display:none}#loginScreen .av3-top-tag{font-size:10px}#loginScreen.safeer-login-v3:not(.hidden){padding:18px 14px!important}#loginScreen .av3-login-card{padding:21px 21px!important}#loginScreen .av3-bottom{font-size:9px}}
+@media(max-width:400px){#loginScreen .av3-logo-wrap{width:105px;height:105px}#loginScreen .av3-brand img{width:95px!important;height:95px!important}#loginScreen .av3-brand h1{font-size:25px!important}#loginScreen .av3-card-top{margin-bottom:9px}#loginScreen .av3-login-card{padding:16px!important}}
+@media(prefers-reduced-motion:reduce){#loginScreen .av3-login-card,#loginScreen .av3-beams,#loginScreen .av3-orbit{animation:none!important}}
+</style>
+<style id="safeer-login-v3-polish-fix">
+/* Overrides previous login themes without affecting captain dashboard. */
+#loginScreen.safeer-login-v3:not(.hidden){min-height:100svh!important;height:auto!important;overflow-x:hidden!important;overflow-y:visible!important;padding:25px clamp(18px,4vw,62px) 22px!important}
+#loginScreen.safeer-login-v3 .av3-layout{direction:ltr!important;grid-template-columns:minmax(0,1fr) minmax(400px,490px)!important;max-width:1160px!important;gap:clamp(38px,5vw,90px)!important;align-items:center!important;min-height:min(700px,calc(100svh - 145px))!important;margin:15px auto!important}
+#loginScreen.safeer-login-v3 .av3-story{grid-column:1;grid-row:1;direction:rtl;text-align:right}
+#loginScreen.safeer-login-v3 .av3-login-card{grid-column:2;grid-row:1;direction:rtl;align-self:center!important;width:100%!important;max-width:490px!important;min-width:0!important;height:auto!important;min-height:0!important;overflow:hidden!important;padding:27px 33px 24px!important;background:linear-gradient(150deg,rgba(23,13,27,.97),rgba(9,9,19,.98) 65%,rgba(34,10,25,.97))!important;border:1px solid rgba(233,173,76,.62)!important;border-radius:25px!important;box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 42px rgba(233,173,76,.19),inset 0 1px 0 rgba(233,173,76,.1)!important;transform:none!important;animation:av3CardReveal .8s cubic-bezier(.16,1,.3,1) both!important}
+#loginScreen.safeer-login-v3 .av3-login-card::before{content:""!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;pointer-events:none!important;border-radius:inherit!important;background:linear-gradient(105deg,transparent 20%,rgba(233,173,76,.06) 47%,transparent 70%)!important;background-size:240% 100%!important;animation:av3Sheen 8s ease-in-out infinite!important;box-shadow:none!important;opacity:1!important}
+#loginScreen.safeer-login-v3 .av3-brand{display:flex!important;flex-direction:column!important;align-items:center!important;gap:0!important;margin:0 0 20px!important;padding:0!important;border:none!important;text-align:center!important}
+#loginScreen.safeer-login-v3 .av3-logo-wrap{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;width:122px!important;height:122px!important;max-width:122px!important;margin:0 auto 14px!important;padding:6px!important;border-radius:23px!important;background:radial-gradient(circle at 50% 30%,rgba(233,173,76,.18),rgba(9,8,15,.94))!important;border:1px solid rgba(233,173,76,.34)!important;box-shadow:0 0 28px rgba(233,173,76,.16)!important;animation:av3LogoFloat 5s ease-in-out infinite!important}
+#loginScreen.safeer-login-v3 .av3-logo-wrap img{position:static!important;display:block!important;flex:none!important;width:108px!important;height:108px!important;min-width:0!important;max-width:108px!important;max-height:108px!important;object-fit:contain!important;margin:0!important;padding:0!important;border-radius:16px!important;transform:none!important;animation:none!important;filter:drop-shadow(0 0 12px rgba(233,173,76,.45))!important}
+#loginScreen.safeer-login-v3 .av3-brand h1{display:block!important;width:100%!important;font-size:clamp(25px,2.3vw,31px)!important;line-height:1.55!important;margin:0!important;white-space:normal!important;color:#fff!important;text-shadow:0 0 20px rgba(233,173,76,.14)}
+#loginScreen.safeer-login-v3 .av3-brand p{font-size:12px!important;line-height:1.8!important;margin:0!important;color:#c5b5c4!important}
+#loginScreen.safeer-login-v3 .av3-form{display:flex!important;flex-direction:column!important;gap:13px!important;margin:0!important}
+#loginScreen.safeer-login-v3 .av3-form .field{display:flex!important;flex-direction:column!important;gap:7px!important}
+#loginScreen.safeer-login-v3 .av3-input-wrap{display:flex!important;position:relative!important;width:100%!important}
+#loginScreen.safeer-login-v3 .av3-form .input{display:block!important;position:relative!important;width:100%!important;height:52px!important;min-height:52px!important;padding:11px 44px 11px 14px!important;background:rgba(7,9,18,.96)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid rgba(233,173,76,.26)!important;border-radius:12px!important;box-shadow:inset 0 2px 12px rgba(0,0,0,.35)!important;outline:none!important}
+#loginScreen.safeer-login-v3 .av3-form .input:focus{border-color:#e9ad4c!important;box-shadow:0 0 0 3px rgba(233,173,76,.15),0 0 22px rgba(233,173,76,.13)!important}
+#loginScreen.safeer-login-v3 .av3-form .input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px #10101b inset!important;-webkit-text-fill-color:#fff!important}
+#loginScreen.safeer-login-v3 .av3-form #loginBtn{transition:transform .2s ease,filter .2s ease,box-shadow .2s ease!important;animation:av3ButtonPulse 4s ease-in-out infinite!important}
+#loginScreen.safeer-login-v3 .av3-story h2{color:#fff!important}
+#loginScreen.safeer-login-v3 .av3-story h2 em{color:#e9ad4c!important}
+#loginScreen.safeer-login-v3 .av3-feature-list>div{transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+#loginScreen.safeer-login-v3 .av3-feature-list>div:hover{transform:translateY(-7px) rotate(-1deg);border-color:rgba(233,173,76,.55);box-shadow:0 12px 30px rgba(233,173,76,.16)}
+@keyframes av3CardReveal{from{opacity:0;transform:translateY(35px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes av3LogoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes av3Sheen{0%,20%{background-position:110% 0}55%,100%{background-position:-110% 0}}
+@keyframes av3ButtonPulse{0%,100%{box-shadow:0 9px 24px rgba(233,173,76,.28),inset 0 1px 0 #ffffff44}50%{box-shadow:0 9px 32px rgba(233,173,76,.5),inset 0 1px 0 #ffffff44}}
+@media(max-width:850px){#loginScreen.safeer-login-v3 .av3-layout{direction:rtl!important;display:flex!important;flex-direction:column!important;gap:0!important;min-height:0!important;max-width:490px!important;margin:20px auto!important}#loginScreen.safeer-login-v3 .av3-story{display:none!important}#loginScreen.safeer-login-v3 .av3-login-card{width:100%!important;max-width:490px!important;padding:23px 23px 22px!important}}
+@media(max-width:420px){#loginScreen.safeer-login-v3 .av3-login-card{padding:19px 17px!important}#loginScreen.safeer-login-v3 .av3-logo-wrap{width:104px!important;height:104px!important}#loginScreen.safeer-login-v3 .av3-logo-wrap img{width:91px!important;height:91px!important}#loginScreen.safeer-login-v3 .av3-brand h1{font-size:25px!important}}
+@media(prefers-reduced-motion:reduce){#loginScreen.safeer-login-v3 .av3-login-card,#loginScreen.safeer-login-v3 .av3-logo-wrap,#loginScreen.safeer-login-v3 .av3-form #loginBtn,#loginScreen.safeer-login-v3 .av3-login-card::before{animation:none!important}}
+</style>
+<style id="safeer-login-v3-input-ambient-fix">
+/* Final login polish: legible placeholder on iOS/Chrome, moving glass background. */
+#loginScreen.safeer-login-v3 .av3-login-card{isolation:isolate!important;background:linear-gradient(135deg,#190c1c,#0b0b17 42%,#2c1024 75%,#100d1b)!important;background-size:240% 240%!important;animation:av3CardReveal .8s cubic-bezier(.16,1,.3,1) both,av3AmbientShift 11s ease-in-out 1s infinite alternate!important}
+#loginScreen.safeer-login-v3 .av3-login-card::before{z-index:-1!important;background:radial-gradient(circle at 20% 30%,rgba(233,173,76,.23),transparent 45%),radial-gradient(circle at 85% 80%,rgba(233,173,76,.19),transparent 45%)!important;background-size:160% 160%!important;animation:av3GlowDrift 10s ease-in-out infinite alternate!important;pointer-events:none!important}
+#loginScreen.safeer-login-v3 .av3-login-card::after{content:""!important;display:block!important;position:absolute!important;inset:0!important;z-index:-1!important;pointer-events:none!important;border-radius:inherit!important;background:linear-gradient(110deg,transparent 25%,rgba(233,173,76,.065) 49%,transparent 70%)!important;background-size:240% 100%!important;animation:av3LightSweep 7s ease-in-out infinite!important}
+#loginScreen.safeer-login-v3 .av3-input-wrap .input{background:#11111e!important;background-color:#11111e!important;color:#fff!important;-webkit-text-fill-color:#fff!important;caret-color:#e9ad4c!important;border-color:rgba(233,173,76,.34)!important}
+#loginScreen.safeer-login-v3 .av3-input-wrap .input::placeholder{color:#b4aabb!important;opacity:1!important;-webkit-text-fill-color:#b4aabb!important;font-size:13px!important;font-weight:500!important}
+#loginScreen.safeer-login-v3 .av3-input-wrap .input:focus::placeholder{color:#aaa1b2!important;opacity:.9!important;-webkit-text-fill-color:#aaa1b2!important}
+#loginScreen.safeer-login-v3 .av3-input-wrap>span{color:#e9ad4c!important;text-shadow:0 0 9px rgba(233,173,76,.28)!important}
+#loginScreen.safeer-login-v3 .av3-form .field label{color:#f7eaf1!important;font-weight:800!important}
+@keyframes av3AmbientShift{0%{background-position:0% 30%}50%{background-position:95% 70%}100%{background-position:15% 100%}}
+@keyframes av3GlowDrift{0%{background-position:0% 0%;opacity:.55}50%{background-position:100% 45%;opacity:1}100%{background-position:30% 100%;opacity:.65}}
+@keyframes av3LightSweep{0%,15%{background-position:120% 0}65%,100%{background-position:-120% 0}}
+@media(prefers-reduced-motion:reduce){#loginScreen.safeer-login-v3 .av3-login-card,#loginScreen.safeer-login-v3 .av3-login-card::before,#loginScreen.safeer-login-v3 .av3-login-card::after{animation:none!important}}
+</style>
+<style id="safeer-v3-brand-final">#loginScreen.safeer-login-v3 .av3-login-card{background:linear-gradient(145deg,#142235,#0a121e 64%,#1d2231)!important;border-color:rgba(233,173,76,.55)!important}#loginScreen.safeer-login-v3 .av3-story h2 em,#loginScreen.safeer-login-v3 .av3-wordmark b{color:#e9ad4c!important}#loginScreen.safeer-login-v3 .av3-form #loginBtn{background:linear-gradient(105deg,#9d631f,#e4a640 52%,#ac7429)!important;border-color:#f1c77b!important;color:#101a29!important}#loginScreen.safeer-login-v3 .av3-logo-wrap{background:radial-gradient(circle,#e9ad4c26,#0a1421 75%)!important}#loginScreen.safeer-login-v3 .av3-input-wrap .input{background:#0a1421!important;color:#fff!important;-webkit-text-fill-color:#fff!important}#loginScreen.safeer-login-v3 .av3-form .input::placeholder{color:#c1b6a9!important;-webkit-text-fill-color:#c1b6a9!important}#loginScreen.safeer-login-v3 .av3-atmosphere{filter:hue-rotate(42deg) saturate(.6)}#loginScreen.safeer-login-v3 .av3-brand img{object-fit:contain!important}</style>
+</head>
 <style id="safeer-login-luxe">
 #loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
 #loginScreen.login-shell.hidden{display:none!important}
@@ -1857,17 +1970,32 @@ body>.bg-glow,body>.glow,body>.orb,body>.ambient-orb,
     </div>
   </div>
 
-  <section id="loginScreen" class="login-shell">
-    <div class="login-card">
-      <div class="brand"><h1>بوابة الكابتن</h1><p>رصيدك، حركاتك، شحنك وكشفك — بمكان واحد</p></div>
-      <form id="loginForm" class="form">
-        <div class="field"><label>رقم الهاتف</label><input id="loginUser" class="input" inputmode="tel" autocomplete="tel" placeholder="079xxxxxxx" required></div>
-        <div class="field"><label>كلمة المرور</label><input id="loginPass" class="input" type="password" autocomplete="current-password" required></div>
-        <button id="loginBtn" class="btn btn-primary" type="submit">دخول حساب الكابتن</button>
-        <small class="hint">🔐 بعد أول دخول سيبقى هذا الجهاز مسجلًا تلقائيًا. استخدم «خروج» إذا كان الجهاز مشتركًا.</small>
-        <button id="installAppLoginBtn" class="btn btn-soft hidden" type="button" onclick="installAbshirApp()">📲 تثبيت بوابة الكابتن</button>
-      </form>
+  <section id="loginScreen" class="login-shell safeer-login-v3" dir="rtl">
+    <div class="av3-atmosphere" aria-hidden="true"><div class="av3-horizon"></div><div class="av3-beams"></div><div class="av3-ground"></div><div class="av3-orbit av3-orbit-one"></div><div class="av3-orbit av3-orbit-two"></div></div>
+    <header class="av3-top"><div class="av3-wordmark"><span class="av3-crown">♛</span><div><b>SAFEER</b><small>AUTO INVENTORY</small></div></div><span class="av3-top-tag"><i></i> بوابة الكباتن · نظام آمن</span></header>
+    <div class="av3-layout">
+      <aside class="av3-story" aria-label="مزايا نظام السفير">
+        <div class="av3-eyebrow"><span></span> نظام السفير الذكي</div>
+        <h2>كل حركة.<br><em>محسوبة.</em></h2>
+        <p>رصيدك وطلباتك وكشف حسابك في لوحة واحدة، بتجربة سريعة وواضحة.</p>
+        <div class="av3-feature-list"><div><span>◈</span><b>جرد تلقائي</b><small>متابعة حركاتك</small></div><div><span>⌁</span><b>كشف تفصيلي</b><small>وضوح في كل عملية</small></div><div><span>✦</span><b>حساب آمن</b><small>خصوصيتك أولًا</small></div></div>
+        <div class="av3-story-foot">SAFEER <span>—</span> BUILT FOR CAPTAINS</div>
+      </aside>
+      <div class="login-card av3-login-card">
+        <div class="av3-card-top"><span class="av3-card-kicker">✦ تسجيل دخول الكابتن</span><span class="av3-card-indicator"><i></i> بوابة السفير</span></div>
+        <div class="brand av3-brand"><div class="av3-logo-wrap"><img src="/assets/safeer-logo.svg" alt="شعار السفير"></div><h1>أهلًا برجعتك <span>👋</span></h1><p>ادخل بياناتك للوصول إلى حسابك</p></div>
+        <form id="loginForm" class="form av3-form">
+          <div class="field"><label for="loginUser">رقم الهاتف</label><div class="av3-input-wrap"><span aria-hidden="true">◉</span><input id="loginUser" class="input" inputmode="tel" autocomplete="tel" placeholder="079xxxxxxx" required></div></div>
+          <div class="field"><label for="loginPass">كلمة المرور</label><div class="av3-input-wrap"><span aria-hidden="true">♙</span><input id="loginPass" class="input" type="password" autocomplete="current-password" placeholder="أدخل كلمة المرور" required></div></div>
+          <button id="loginBtn" class="btn btn-primary" type="submit">دخول حساب الكابتن <span aria-hidden="true">←</span></button>
+          <small class="hint">🔒 بعد أول دخول سيبقى هذا الجهاز مسجلًا تلقائيًا. استخدم «خروج» إذا كان الجهاز مشتركًا.</small>
+          <div class="av3-divider"><span>أو</span></div>
+          <button id="installAppLoginBtn" class="btn btn-soft hidden" type="button" onclick="installAbshirApp()">📲 تثبيت بوابة الكابتن</button>
+        </form>
+        <div class="av3-card-foot"><span>🔐 اتصال محمي</span><span>السفير © 2026</span></div>
+      </div>
     </div>
+    <footer class="av3-bottom"><span>تصميم وتشغيل <b>Drop Code</b></span><span>SAFEER · CAPTAIN PORTAL</span></footer>
   </section>
 
   <section id="appScreen" class="shell hidden">
