@@ -198,6 +198,11 @@ app.get("/favicon.ico", async (request, reply) => {
   return reply.code(204).send();
 });
 
+app.get("/assets/safeer-official-logo.png", async (request, reply) => {
+  const image=await fs.readFile(new URL("./assets/safeer-official-logo.png", import.meta.url));
+  return reply.type("image/png").header("Cache-Control","public, max-age=3600").send(image);
+});
+
 app.get("/assets/safeer-logo.svg", async (request, reply) => {
   const image=await fs.readFile(new URL("./assets/safeer-logo.svg", import.meta.url));
   return reply.type("image/svg+xml").send(image);
