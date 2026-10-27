@@ -6586,5 +6586,32 @@ $('broadcastLoadGroups').onclick=async()=>{const select=$('broadcastGroup');sele
 $('broadcastSend').onclick=async()=>{const select=$('broadcastGroup'),group=select.value,msg=$('broadcastText').value.trim();if(!group||!msg)return alert('اختر القروب واكتب الرسالة');if(!confirm('تأكيد إرسال الرسالة إلى: '+select.selectedOptions[0].text+'؟\\n\\n'+msg.slice(0,300)))return;const b=$('broadcastSend');b.disabled=true;try{await rpc('sendManualBroadcast',token(),group,msg);$('broadcastStatus').textContent='✅ تم قبول إرسال الرسالة للقروب';$('broadcastText').value=''}catch(e){$('broadcastStatus').textContent='❌ '+e.message}finally{b.disabled=false}};
 })();
 </script>
+<style id="cinematic-motion-v1">
+:root{--cm-accent:#f04448}body.cm-safeer{--cm-accent:#45b9ef}
+@keyframes cm-enter{from{opacity:.25;transform:perspective(1100px) translate3d(0,18px,-90px) rotateX(2deg);filter:blur(5px)}to{opacity:1;transform:perspective(1100px) translate3d(0,0,0) rotateX(0);filter:blur(0)}}
+@keyframes cm-exit{to{opacity:0;transform:perspective(1100px) scale(.95) translateZ(-70px);filter:blur(6px)}}
+@keyframes cm-flash{0%{opacity:0;transform:translateX(-100%)}45%{opacity:.75}100%{opacity:0;transform:translateX(100%)}}
+body.cm-ready main,body.cm-ready .main-content,body.cm-ready #app{animation:cm-enter .55s cubic-bezier(.2,.8,.2,1) both;transform-origin:50% 20%}
+body.cm-leaving main,body.cm-leaving .main-content,body.cm-leaving #app{animation:cm-exit .28s ease-in both;pointer-events:none}
+#cm-light{position:fixed;inset:0;z-index:2147483000;pointer-events:none;opacity:0;background:linear-gradient(100deg,transparent 38%,color-mix(in srgb,var(--cm-accent),transparent 70%) 49%,transparent 62%);transform:translateX(-100%)}
+body.cm-leaving #cm-light{animation:cm-flash .32s ease-out both}
+#cm-sound{position:fixed;bottom:18px;left:18px;z-index:2147483001;border:1px solid var(--cm-accent);border-radius:999px;background:#111827e8;color:white;padding:9px 13px;font:600 12px system-ui;cursor:pointer;box-shadow:0 5px 22px #0004}
+@media(hover:hover){body.cm-ready button:not(:disabled),body.cm-ready a{transition:transform .18s ease,filter .18s ease}body.cm-ready button:not(:disabled):active,body.cm-ready a:active{transform:scale(.97)}}
+@media(prefers-reduced-motion:reduce){body.cm-ready main,body.cm-ready .main-content,body.cm-ready #app,body.cm-leaving main,body.cm-leaving .main-content,body.cm-leaving #app,body.cm-leaving #cm-light{animation:none!important}}
+</style>
+<script id="cinematic-motion-engine-v1">
+(()=>{'use strict';
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const key='drop_cinematic_sound_v1';let enabled=localStorage.getItem(key)==='on';let audio=null;let leaving=false;
+document.body.classList.add('cm-ready');document.body.classList.toggle('cm-safeer',location.hostname.includes('safeer')||document.title.includes('السفير'));
+const light=document.createElement('div');light.id='cm-light';document.body.append(light);
+const toggle=document.createElement('button');toggle.id='cm-sound';toggle.type='button';toggle.setAttribute('aria-label','تشغيل أو إيقاف المؤثرات الصوتية');
+function label(){toggle.textContent=enabled?'🔊 المؤثرات: تعمل':'🔇 تشغيل المؤثرات'}label();
+toggle.addEventListener('click',()=>{enabled=!enabled;localStorage.setItem(key,enabled?'on':'off');label();sound('click')});document.body.append(toggle);
+function sound(type){if(!enabled)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const t=audio.currentTime,osc=audio.createOscillator(),gain=audio.createGain();osc.type=type==='transition'?'sine':'triangle';osc.frequency.setValueAtTime(type==='transition'?420:620,t);osc.frequency.exponentialRampToValueAtTime(type==='transition'?160:860,t+.16);gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.055,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+.19);osc.connect(gain);gain.connect(audio.destination);osc.start(t);osc.stop(t+.2)}catch(_){}}
+document.addEventListener('click',e=>{if(e.target.closest('#cm-sound'))return;const a=e.target.closest('a[href]');if(a&&!e.defaultPrevented&&e.button===0&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey&&a.target!=='_blank'&&!a.hasAttribute('download')){let u;try{u=new URL(a.href,location.href)}catch(_){}if(u&&u.origin===location.origin&&u.href!==location.href&&!(u.pathname===location.pathname&&u.search===location.search)&&!leaving){e.preventDefault();leaving=true;sound('transition');if(!reduced)document.body.classList.add('cm-leaving');setTimeout(()=>location.assign(u.href),reduced?0:270);return}}const control=e.target.closest('button,[role="tab"],[data-tab]');if(control&&control!==toggle&&!control.disabled)sound('click')},true);
+window.addEventListener('pageshow',()=>{leaving=false;document.body.classList.remove('cm-leaving')});
+})();
+</script>
 </body>
 </html>
