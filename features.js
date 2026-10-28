@@ -3038,19 +3038,19 @@ export async function reconcileMixed40(userId){
 let thursdayDeductionTimer=null;
 // Weekly floor: Wednesday 00:00 Asia/Amman (start of Wednesday, NOT Thursday).
 // Week accounting still ends Thursday; scheduledAt belongs to Wednesday.
+// Weekly floor runs when Wednesday ends and Thursday begins, at 00:00 Asia/Amman.
 function ammanWednesdayFloorScheduledAt(weekEnd){
-  const wednesday=addDaysKey(weekEnd,-1);
-  return new Date(`${wednesday}T00:00:00+03:00`);
+  return new Date(`${weekEnd}T00:00:00+03:00`);
 }
 
 function scheduledFloorWeek(now=new Date()){
   const p=jordanParts(now);
   const today=`${p.year}-${p.month}-${p.day}`;
-  if(p.weekday==="Wed"||p.weekday==="Thu"){
+  if(p.weekday==="Thu"){
     const week=activeWeek(now);
-    return {...week,scheduledAt:ammanWednesdayFloorScheduledAt(week.end),catchup:p.weekday==="Thu"};
+    return {...week,scheduledAt:ammanWednesdayFloorScheduledAt(week.end),catchup:p.hour!==0};
   }
-  // Restart fail-safe: Friday catches up the just-completed accounting week.
+  // Friday recovery if the server was offline at Thursday midnight.
   if(p.weekday==="Fri"){
     const end=addDaysKey(today,-1);
     const start=addDaysKey(end,-6);
@@ -3099,13 +3099,13 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
   const cleanStart=await getCleanStartState();
   if(cleanStart.status!=="COMPLETED"||cleanStart.automaticStatus!=="LIVE")return {ok:true,skipped:true,reason:"clean_start_not_live"};
   const target=scheduledFloorWeek(now);
-  if(!target)return {ok:true,skipped:true,reason:"outside_wednesday_midnight_or_catchup"};
+  if(!target)return {ok:true,skipped:true,reason:"outside_thursday_midnight_or_catchup"};
 
   const {start,end,scheduledAt,catchup}=target;
   const lockClient=await db.connect();
   let locked=false;
   try{
-    const lockKey=`abshir_weekly_floor_wednesday_00:${end}`;
+    const lockKey=`abshir_weekly_floor_thursday_00:${end}`;
     const lk=await lockClient.query(`SELECT pg_try_advisory_lock(hashtext($1)) AS locked`,[lockKey]);
     if(!lk.rows[0]?.locked)return {ok:true,skipped:true,reason:"scheduler_already_running",weekEnd:end};
     locked=true;
@@ -3156,9 +3156,9 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
         // Guard 2: deterministic reference + DB unique index protects concurrent/replayed ticks.
         await createMovement({
           captainId:c.id,kind:"weekly_deduction",amount:FLOOR,
-          referenceType:"weekly_floor_thursday_12",referenceId:`${end}:${c.id}:thu12:100`,
-          description:`أرضية أسبوعية 1.00 د.أ — الخميس 12:00 ظهرًا — الأسبوع ${end}`,
-          metadata:{type:"WEEKLY_FLOOR",weekStart:start,weekEnd:end,source:"THURSDAY_12_SCHEDULER",scheduledAt:scheduledAt.toISOString(),amount:FLOOR,catchup:Boolean(catchup)},
+          referenceType:"weekly_floor_thursday_midnight",referenceId:`${end}:${c.id}:thu00:100`,
+          description:`أرضية أسبوعية 1.00 د.أ — بداية الخميس 00:00 — الأسبوع ${end}`,
+          metadata:{type:"WEEKLY_FLOOR",weekStart:start,weekEnd:end,source:"THURSDAY_MIDNIGHT_SCHEDULER",scheduledAt:scheduledAt.toISOString(),amount:FLOOR,catchup:Boolean(catchup)},
           createdBy:createdBy||null,occurredAt:scheduledAt.toISOString()
         });
         applied++;await syncCaptainBalanceState(c.id).catch(()=>null);
@@ -3168,17 +3168,17 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
       }
     }
     const details={weekStart:start,weekEnd:end,scheduledAt:scheduledAt.toISOString(),catchup:Boolean(catchup),eligible:caps.rowCount,applied,duplicates,duplicateRepairs,failed,amount:FLOOR,errors};
-    await audit(createdBy||null,"weekly.floor.thursday_12","system",end,details);
+    await audit(createdBy||null,"weekly.floor.thursday_midnight","system",end,details);
     return {ok:failed===0,...details};
   }finally{
-    if(locked){try{await lockClient.query(`SELECT pg_advisory_unlock(hashtext($1))`,[`abshir_weekly_floor_wednesday_00:${target.end}`])}catch{}}
+    if(locked){try{await lockClient.query(`SELECT pg_advisory_unlock(hashtext($1))`,[`abshir_weekly_floor_thursday_00:${target.end}`])}catch{}}
     lockClient.release();
   }
 }
 
 export function startThursdayFixedDeductionScheduler(){
   if(thursdayDeductionTimer)return thursdayDeductionTimer;
-  const tick=()=>applyThursdayFixedDeduction(new Date(),null).catch(err=>console.error("Wednesday midnight floor scheduler:",err?.message||err));
+  const tick=()=>applyThursdayFixedDeduction(new Date(),null).catch(err=>console.error("Thursday midnight floor scheduler:",err?.message||err));
   setTimeout(tick,5000).unref?.();
   thursdayDeductionTimer=setInterval(tick,60*1000);
   thursdayDeductionTimer.unref?.();
