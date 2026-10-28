@@ -1441,9 +1441,9 @@ export async function fridayPreview(periodKey=lastCompletedWeek().end){
   const rows=q.rows.map(x=>{
     const prodQty=n(x.production_qty),consQty=n(x.consumption_qty),effectiveCount=Math.max(prodQty,consQty);
     const classification=n(x.production)>n(x.consumption)&&n(x.production)>0?"PRODUCER":((n(x.production)||n(x.consumption))?"CONSUMER":"NO_ACTIVITY");
-    // V3.8.5.39: قاعدة 40 ملغاة، والأرضية الوحيدة 1.50 د.أ الخميس 21:00 عمّان.
+    // V3.8.5.39: قاعدة 40 ملغاة، والأرضية الوحيدة 1.50 د.أ Wednesday 00:00 عمّان.
     // الجمعة تعرض أي أرضية مفقودة للتدقيق فقط ولا تنشئ خصمًا بديلًا؛ هذا يمنع
-    // نزول الأرضية في توقيت غير الخميس 9 مساءً.
+    // نزول الأرضية في توقيت غير Wednesday 00:00.
     const floorPaid=money(x.floor_paid),batchPaid=money(x.batch_paid);
     const missingFloor=classification!=="NO_ACTIVITY"?money(Math.max(0,FLOOR-floorPaid)):0;
     const missingBatch=0;
@@ -1460,7 +1460,7 @@ const r=await db.query(`INSERT INTO friday_group_sessions(status,period_key,requ
 async function applyWeeklyDeductions(preview,userId){
   // V3.8.5.39: no Friday fallback charge.
   // Missing floors are audit issues only; the actual floor is created exclusively
-  // by the Thursday 21:00 scheduler (with Friday restart catch-up using Thursday timestamp).
+  // by the Wednesday 00:00 scheduler (with Friday restart catch-up using Thursday timestamp).
   return {applied:0,scheduledOnly:true,weekEnd:preview?.weekEnd||null};
 }
 export async function commitFriday(userId){
@@ -1994,7 +1994,7 @@ async function recordReaction({producer,consumer,components,doneMessageId,reacti
     let legacyCovered=0,railwayCovered=0,crossProviderCovered=0,repairedQuantityMismatch=0,reversedWrongQuantity=0;
 
     // V3.8.5.39 compatibility calls only: ensureWeeklyFloorCharge is a no-op.
-    // The weekly 1.50 floor is scheduled Thursday 21:00, never on first movement.
+    // The weekly 1.50 floor is scheduled Wednesday 00:00, never on first movement.
     for(const cap of [producer,consumer].sort((a,b)=>Number(a.id)-Number(b.id))){
       await ensureWeeklyFloorCharge(client,{captainId:cap.id,createdBy:userId,at:accountingAt,sourceReference:`GREEN:${doneMessageId}`});
     }
@@ -3019,7 +3019,7 @@ export async function reconcileMixed40(userId){
   let adjusted=0,netAdjustment=0;const errors=[];const captainIds=new Set();const reversedEntryIds=[];
   for(const e of q.rows){
     try{
-      await reverseLedgerEntry({entryId:e.id,createdBy:userId,reason:'إلغاء اقتطاع 40 حركة القديم — القاعدة الجديدة أرضية 1.50 الخميس 9م فقط'});
+      await reverseLedgerEntry({entryId:e.id,createdBy:userId,reason:'إلغاء اقتطاع 40 حركة القديم — القاعدة الجديدة أرضية 1.50 Wednesday 00:00 فقط'});
       adjusted++;
       netAdjustment=money(netAdjustment-Number(e.amount||0));
       captainIds.add(String(e.captain_id));
@@ -3031,25 +3031,30 @@ export async function reconcileMixed40(userId){
   }
   await Promise.all([...captainIds].map(id=>syncCaptainBalanceState(id).catch(()=>null)));
   await audit(userId,'weekly.legacy40.retire_current_week','system',week.end,{weekStart:week.start,weekEnd:week.end,found:q.rowCount,adjusted,netAdjustment,reversedEntryIds,errors});
-  return {netAdjustment,adjusted,found:q.rowCount,errors,weekStart:week.start,weekEnd:week.end,disabled:true,rule:'اقتطاع 40 حركة ملغى — أرضية 1.50 الخميس 9م فقط'};
+  return {netAdjustment,adjusted,found:q.rowCount,errors,weekStart:week.start,weekEnd:week.end,disabled:true,rule:'اقتطاع 40 حركة ملغى — أرضية 1.50 Wednesday 00:00 فقط'};
 }
 
-// ----- Weekly floor: Thursday 12:00 (Asia/Amman), exactly once per captain/week -----
+// ----- Weekly floor: Wednesday 00:00 (Asia/Amman), once per captain/week -----
 let thursdayDeductionTimer=null;
-function ammanThursdayFloorScheduledAt(weekEnd){return new Date(`${weekEnd}T12:00:00+03:00`)}
+// Weekly floor: Wednesday 00:00 Asia/Amman (start of Wednesday, NOT Thursday).
+// Week accounting still ends Thursday; scheduledAt belongs to Wednesday.
+function ammanWednesdayFloorScheduledAt(weekEnd){
+  const wednesday=addDaysKey(weekEnd,-1);
+  return new Date(`${wednesday}T00:00:00+03:00`);
+}
 
 function scheduledFloorWeek(now=new Date()){
   const p=jordanParts(now);
   const today=`${p.year}-${p.month}-${p.day}`;
-  if(p.weekday==="Thu"&&Number(p.hour)>=12){
+  if(p.weekday==="Wed"||p.weekday==="Thu"){
     const week=activeWeek(now);
-    return {...week,scheduledAt:ammanThursdayFloorScheduledAt(week.end),catchup:false};
+    return {...week,scheduledAt:ammanWednesdayFloorScheduledAt(week.end),catchup:p.weekday==="Thu"};
   }
-  // Restart fail-safe: Friday may catch up the just-completed Thursday.
+  // Restart fail-safe: Friday catches up the just-completed accounting week.
   if(p.weekday==="Fri"){
     const end=addDaysKey(today,-1);
     const start=addDaysKey(end,-6);
-    return {start,end,scheduledAt:ammanThursdayFloorScheduledAt(end),catchup:true};
+    return {start,end,scheduledAt:ammanWednesdayFloorScheduledAt(end),catchup:true};
   }
   return null;
 }
@@ -3075,7 +3080,7 @@ export async function rollbackFloorChargesForDate(targetDate="2026-08-27",create
   let reversed=0,already=0,failed=0;const errors=[],captainIds=new Set(),entryIds=[];
   for(const e of q.rows){
     try{
-      await reverseLedgerEntry({entryId:e.id,createdBy:createdBy||null,reason:`إلغاء أرضيات ${day} قبل اعتماد قاعدة الخميس 9 مساءً`});
+      await reverseLedgerEntry({entryId:e.id,createdBy:createdBy||null,reason:`إلغاء أرضيات ${day} قبل اعتماد قاعدة Wednesday 00:00`});
       reversed++;entryIds.push(Number(e.id));captainIds.add(String(e.captain_id));
     }catch(err){
       if(err?.message==="entry_already_reversed"){already++;continue}
@@ -3094,13 +3099,13 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
   const cleanStart=await getCleanStartState();
   if(cleanStart.status!=="COMPLETED"||cleanStart.automaticStatus!=="LIVE")return {ok:true,skipped:true,reason:"clean_start_not_live"};
   const target=scheduledFloorWeek(now);
-  if(!target)return {ok:true,skipped:true,reason:"outside_thursday_12_or_friday_catchup"};
+  if(!target)return {ok:true,skipped:true,reason:"outside_wednesday_midnight_or_catchup"};
 
   const {start,end,scheduledAt,catchup}=target;
   const lockClient=await db.connect();
   let locked=false;
   try{
-    const lockKey=`abshir_weekly_floor_12:${end}`;
+    const lockKey=`abshir_weekly_floor_wednesday_00:${end}`;
     const lk=await lockClient.query(`SELECT pg_try_advisory_lock(hashtext($1)) AS locked`,[lockKey]);
     if(!lk.rows[0]?.locked)return {ok:true,skipped:true,reason:"scheduler_already_running",weekEnd:end};
     locked=true;
@@ -3166,14 +3171,14 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
     await audit(createdBy||null,"weekly.floor.thursday_12","system",end,details);
     return {ok:failed===0,...details};
   }finally{
-    if(locked){try{await lockClient.query(`SELECT pg_advisory_unlock(hashtext($1))`,[`abshir_weekly_floor_12:${target.end}`])}catch{}}
+    if(locked){try{await lockClient.query(`SELECT pg_advisory_unlock(hashtext($1))`,[`abshir_weekly_floor_wednesday_00:${target.end}`])}catch{}}
     lockClient.release();
   }
 }
 
 export function startThursdayFixedDeductionScheduler(){
   if(thursdayDeductionTimer)return thursdayDeductionTimer;
-  const tick=()=>applyThursdayFixedDeduction(new Date(),null).catch(err=>console.error("Thursday 1.50 floor scheduler:",err?.message||err));
+  const tick=()=>applyThursdayFixedDeduction(new Date(),null).catch(err=>console.error("Wednesday midnight floor scheduler:",err?.message||err));
   setTimeout(tick,5000).unref?.();
   thursdayDeductionTimer=setInterval(tick,60*1000);
   thursdayDeductionTimer.unref?.();
