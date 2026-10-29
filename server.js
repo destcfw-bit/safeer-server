@@ -197,7 +197,7 @@ function portalAmountAllowed(username,value){
 
 
 app.get("/captain.webmanifest", async (request, reply) => reply.type("application/manifest+json").header("Cache-Control","no-cache").send({name:"السفير | بوابة الكباتن",short_name:"السفير",lang:"ar",dir:"rtl",start_url:"/captain",scope:"/",display:"standalone",background_color:"#0B2341",theme_color:"#0B2341",icons:[{src:"/assets/safeer-official-logo.png",sizes:"any",type:"image/png",purpose:"any"}]}));
-app.get("/captain-sw.js", async (request, reply) => reply.type("application/javascript").header("Service-Worker-Allowed","/").header("Cache-Control","no-store").send("self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(self.clients.openWindow('/captain'))});"));
+app.get("/captain-sw.js", async (request, reply) => reply.type("application/javascript").header("Service-Worker-Allowed","/").header("Cache-Control","no-store").send("self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('push',e=>{let data={};try{data=e.data?.json()||{}}catch{};e.waitUntil(self.registration.showNotification(String(data.title||'إشعار السفير').slice(0,100),{body:String(data.body||'لديك تحديث جديد').slice(0,220),icon:'/assets/safeer-official-logo.png',data:{url:'/captain'},tag:String(data.tag||'safeer-update')}))});self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(self.clients.openWindow('/captain'))});"));
 
 app.get("/favicon.ico", async (request, reply) => {
   return reply.code(204).send();
