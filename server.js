@@ -779,7 +779,7 @@ app.post("/webhook/dropconnect", async (request, reply) => {
 
   if(String(payload?.messageData?.typeMessage||"")==="reactionMessage"){
     const emoji=String(payload?.messageData?.reactionMessageData?.text||"").replace(/\uFE0F/g,"").trim();
-    if(emoji && emoji!=="👍"){
+    if(emoji && emoji!=="👍" && emoji!=="🚫" && !/^[1-9]️⃣$/.test(emoji) && emoji!=="🔟"){
       return reply.code(200).send({ok:true,ignored:true,reason:"north_reaction_not_allowed"});
     }
   }
