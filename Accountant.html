@@ -1459,6 +1459,7 @@ body{overflow-x:hidden}
         <details class="nav-group">
           <summary><span>⚙</span> الإعدادات والإدارة</summary>
           
+          <button type="button" data-view="push-broadcast" onclick="switchView('push-broadcast',this)"><span>🔔</span> إرسال الإشعارات</button>
           <button type="button" data-view="manual-broadcast" onclick="switchView('manual-broadcast',this);document.getElementById('broadcastLoadGroups').click()"><span>📣</span> إرسال رسالة واتساب</button>
           <button data-view="maintenance" onclick="switchView('maintenance',this)"><span>🛠</span> صيانة موقع الكباتن</button>
           <button data-view="unregistered" onclick="switchView('unregistered',this)"><span>⛔</span> أرقام غير مسجلة <b id="navUnregisteredBadge" class="nav-count hidden">0</b></button>
@@ -1491,7 +1492,8 @@ body{overflow-x:hidden}
         </div>
       </header>
 
-      <section id="view-manual-broadcast" class="view" dir="rtl"><div class="panel"><div class="panel-head"><h3>📣 إرسال رسالة لقروب واتساب</h3></div><details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details></div></section>
+      <section id="view-push-broadcast" class="view"><div class="panel"><h3>🔔 إرسال الإشعارات</h3><p>إرسال إشعار لجميع المشتركين أو لكباتن محددين.</p><div style="display:grid;gap:12px;max-width:750px"><select class="input" id="pushMode" onchange="document.getElementById('pushPicker').hidden=this.value!=='selected'"><option value="all">كل الكباتن</option><option value="selected">كباتن محددون</option></select><div id="pushPicker" hidden><input class="input" id="pushSearch" placeholder="بحث بالاسم أو الهاتف" oninput="clearTimeout(window.pushTimer);window.pushTimer=setTimeout(loadPushRecipients,300)"><div id="pushRecipients" style="max-height:260px;overflow:auto"></div></div><input class="input" id="pushTitle" maxlength="100" placeholder="عنوان الإشعار"><textarea class="input" id="pushMessage" maxlength="220" rows="4" placeholder="نص الإشعار"></textarea><div id="pushStatus" class="settlement-note">الإرسال للأجهزة المشتركة فقط، بعد تأكيدك.</div><button class="btn btn-primary" type="button" onclick="sendCaptainPush()">🔔 معاينة وتأكيد الإرسال</button></div></div></section>
+       <section id="view-manual-broadcast" class="view" dir="rtl"><div class="panel"><div class="panel-head"><h3>📣 إرسال رسالة لقروب واتساب</h3></div><details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details></div></section>
       <section id="view-dashboard" class="view active">
         <div class="dashboard-hero">
           <div class="hero-copy">
@@ -5543,6 +5545,43 @@ function renderCaptains(){
     if(first&&!allowed.has(supported[activeViewName()]))switchView(first.dataset.view,first);
   }
 
+  async function pushApiRequest(path,body){
+    const token=localStorage.getItem('abshir_accountant_token')||sessionStorage.getItem('abshir_delegated_admin_token')||'';
+    if(!token)throw Error('سجّل الدخول أولًا');
+    const response=await fetch(path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    const data=await response.json();
+    if(!response.ok||data.ok===false)throw Error(data.error||'تعذر تنفيذ الطلب');
+    return data;
+  }
+  const pushSelected=new Map();
+  async function loadPushRecipients(){
+    const box=document.getElementById('pushRecipients');if(!box)return;
+    try{
+      const data=await pushApiRequest('/api/push/recipients?q='+encodeURIComponent(document.getElementById('pushSearch').value.trim()));
+      box.replaceChildren();
+      for(const captain of data.captains||[]){
+        const label=document.createElement('label');label.style.cssText='display:flex;gap:8px;padding:8px';
+        const input=document.createElement('input');input.type='checkbox';input.checked=pushSelected.has(String(captain.id));
+        input.onchange=()=>{if(input.checked)pushSelected.set(String(captain.id),captain);else pushSelected.delete(String(captain.id))};
+        const span=document.createElement('span');span.textContent=captain.name+' — '+captain.phone+' ('+captain.devices+' جهاز)';
+        label.append(input,span);box.append(label);
+      }
+      if(!data.captains?.length)box.textContent='لا يوجد كباتن مشتركين في نتائج البحث';
+    }catch(e){box.textContent='تعذر تحميل القائمة: '+e.message}
+  }
+  async function sendCaptainPush(){
+    const status=document.getElementById('pushStatus'),mode=document.getElementById('pushMode').value;
+    const title=document.getElementById('pushTitle').value.trim(),message=document.getElementById('pushMessage').value.trim();
+    const captainIds=[...pushSelected.keys()].map(Number);
+    if(!title||!message){status.textContent='اكتب العنوان والرسالة';return}
+    if(mode==='selected'&&!captainIds.length){status.textContent='اختر كابتنًا واحدًا على الأقل';return}
+    if(!confirm('تأكيد إرسال الإشعار إلى '+(mode==='all'?'كل المشتركين':captainIds.length+' كابتن')+'؟\n'+title+'\n'+message))return;
+    status.textContent='جاري الإرسال...';
+    try{const result=await pushApiRequest('/api/push/send',{mode,captainIds,title,message,confirm:true});status.textContent='تم قبول '+result.sent+' إشعار، فشل '+result.failed+'، الكباتن '+result.recipients;}
+    catch(e){status.textContent='فشل الإرسال: '+e.message}
+  }
+  window.sendCaptainPush=sendCaptainPush;
+  window.loadPushRecipients=loadPushRecipients;
   function switchView(name,btn){
     const target=$('view-'+name);
     if(!target)return;
@@ -5551,7 +5590,7 @@ function renderCaptains(){
     document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
     if(btn)btn.classList.add('active');
     btn?.closest('details')?.setAttribute('open','');
-    const titles={'weekly-participants':['المتفاعلون والأرضية','تقرير الكباتن الفريدين والأرضية الأسبوعية'],'captain-withdrawals':['طلبات سحب الرصيد','مراجعة طلبات السحب وتصنيف الكباتن'],dashboard:['الرئيسية','ملخص حالة النظام اليوم'],captains:['الكباتن','إدارة الحسابات والأرصدة'],unregistered:['أرقام غير مسجلة','رسائل حُذفت من القروب لأن أصحابها غير موجودين بالنظام'],movements:['إدخال الجرد اليدوي','إنتاج أو استهلاك وإضافة ملف Excel للدورة الحالية'],transfers:['الحوالات','مراجعة طلبات الشحن'],settlements:['تحويلات الجمعة','المستحقات الأسبوعية والتحويلات السابقة'],codes:['أكواد الشحن','الأكواد الصادرة وحالتها'],inventory:['الجرد والحركات','ملخص لحظي للإنتاج والاستهلاك والأرصدة'],'comparison-monitor':['مقارنة اليدوي والآلي','تشغيل آمن من نفس الرقم والقروب بدون تغيير الأرصدة'],reconciliation:['مقارنة الجرد اليدوي','تسوية فرق الجرد بين اليدوي والنظام'],whatsapp:['جرد واتساب','مراجعة النصوص والتسجيلات الصوتية واعتمادها'],'live-whatsapp':['مباشر القروب','مشاهدة ما يحدث في قروب واتساب لحظة بلحظة'],quality:['مركز الأخطاء','المراجعة والتصحيح والفحص اليومي وسجل التدقيق'],'system-health':['مراقبة النظام','PostgreSQL و Redis والطابور وآخر المزامنة'],storage:['إدارة التخزين','تنظيف الصور وبيانات واتساب والأرشيف القديم بأمان'],'reliability':['الاعتمادية والتشخيص','DLQ و Replay و Shadow Mode ومنع التكرار'],'migration':['مطابقة Google / PostgreSQL','مقارنة الكباتن والأرصدة والحركات قبل التحويل'],'full-migration':['نقل بيانات App Script','رفع وتطبيق بيانات Google على PostgreSQL بأمان'],'staff-users':['المستخدمون والصلاحيات','إدارة الأدمن والمحاسبين والصلاحيات'],'green-settings':['واتساب والقروب','الربط والاسترجاع والرسائل وصلاحيات الإلغاء'],transactions:['سجل الحركات','حركات الشحن والجرد في الدورة الحالية'],maintenance:['صيانة موقع الكباتن','إغلاق موقع الكباتن وتحديد نسبة إنجاز الصيانة']};
+    const titles={'push-broadcast':['إرسال الإشعارات','إرسال إشعار لجميع الكباتن المشتركين أو كباتن محددين'],'weekly-participants':['المتفاعلون والأرضية','تقرير الكباتن الفريدين والأرضية الأسبوعية'],'captain-withdrawals':['طلبات سحب الرصيد','مراجعة طلبات السحب وتصنيف الكباتن'],dashboard:['الرئيسية','ملخص حالة النظام اليوم'],captains:['الكباتن','إدارة الحسابات والأرصدة'],unregistered:['أرقام غير مسجلة','رسائل حُذفت من القروب لأن أصحابها غير موجودين بالنظام'],movements:['إدخال الجرد اليدوي','إنتاج أو استهلاك وإضافة ملف Excel للدورة الحالية'],transfers:['الحوالات','مراجعة طلبات الشحن'],settlements:['تحويلات الجمعة','المستحقات الأسبوعية والتحويلات السابقة'],codes:['أكواد الشحن','الأكواد الصادرة وحالتها'],inventory:['الجرد والحركات','ملخص لحظي للإنتاج والاستهلاك والأرصدة'],'comparison-monitor':['مقارنة اليدوي والآلي','تشغيل آمن من نفس الرقم والقروب بدون تغيير الأرصدة'],reconciliation:['مقارنة الجرد اليدوي','تسوية فرق الجرد بين اليدوي والنظام'],whatsapp:['جرد واتساب','مراجعة النصوص والتسجيلات الصوتية واعتمادها'],'live-whatsapp':['مباشر القروب','مشاهدة ما يحدث في قروب واتساب لحظة بلحظة'],quality:['مركز الأخطاء','المراجعة والتصحيح والفحص اليومي وسجل التدقيق'],'system-health':['مراقبة النظام','PostgreSQL و Redis والطابور وآخر المزامنة'],storage:['إدارة التخزين','تنظيف الصور وبيانات واتساب والأرشيف القديم بأمان'],'reliability':['الاعتمادية والتشخيص','DLQ و Replay و Shadow Mode ومنع التكرار'],'migration':['مطابقة Google / PostgreSQL','مقارنة الكباتن والأرصدة والحركات قبل التحويل'],'full-migration':['نقل بيانات App Script','رفع وتطبيق بيانات Google على PostgreSQL بأمان'],'staff-users':['المستخدمون والصلاحيات','إدارة الأدمن والمحاسبين والصلاحيات'],'green-settings':['واتساب والقروب','الربط والاسترجاع والرسائل وصلاحيات الإلغاء'],transactions:['سجل الحركات','حركات الشحن والجرد في الدورة الحالية'],maintenance:['صيانة موقع الكباتن','إغلاق موقع الكباتن وتحديد نسبة إنجاز الصيانة']};
     titles.quality=['مركز الأخطاء','المراجعة والتصحيح للحركات الجديدة'];
     titles['captain-admin-access']=['تفويض الإدارة للكباتن','تحديد صلاحيات كل رقم على حدة'];
     $('pageTitle').textContent=(titles[name]||[name,''])[0];
