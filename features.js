@@ -1,3 +1,4 @@
+import { notifyInventoryMovement } from "./push-notifications.js";
 import { randomUUID } from "node:crypto";
 import {
   db, getBalance, createMovement, reverseLedgerEntry, ensureWeeklyFloorCharge, audit,
@@ -2841,6 +2842,10 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
     // Only genuinely ambiguous or broken mappings remain in waiting_review.
 
     const result=await recordReaction({producer,consumer,components,doneMessageId:done,reactionId:id,originalMessageId:original,userId,requestText,repairMode,safeRecovery,outageRecoveryJobId,occurredAt:eventIsoFromPayload(payload),comparisonMode});
+    // Notify producer and consumer once for newly committed live requests only.
+    if(!comparisonMode&&!repairMode&&!safeRecovery&&!result.duplicate&&!result.ignored&&result.transactions?.length){
+      await notifyInventoryMovement(db,{producer,consumer,components,doneMessageId:done});
+    }
     await setEventStatus(done,"processed","تم اعتماد الرد بواسطة 👍");
     if(!req.synthetic)await setEventStatus(original,"processed","تم احتساب الطلب");
     await setEventStatus(id,result.ignored?"ignored":result.duplicate?"duplicate":"processed",result.ignored?"الطلب الأصلي محسوب لرد آخر — أزل 👍 السابق أولًا ثم اعتمد هذا الرد":result.duplicate?"محسوب سابقًا":restoredFromQuotedRequest?"تم الجرد بعد استعادة الطلب المحذوف من الاقتباس":"تم الجرد تلقائيًا");
