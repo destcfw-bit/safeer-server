@@ -1,3 +1,4 @@
+import {registerPushRoutes} from "./push-notifications.js";
 import {registerBalanceImportRoutes} from "./balance-transfer.js";
 import Fastify from "fastify";
 import jwt from "@fastify/jwt";
@@ -97,6 +98,7 @@ function requireRoles(...roles) {
 }
 
 registerBalanceImportRoutes(app,requireRoles);
+registerPushRoutes(app,{db,requireRoles});
 
 function requireAbshirManualBridgeSecret(request,reply){
   const configured=String(process.env.ABSHIR_MANUAL_BRIDGE_SECRET||'');
