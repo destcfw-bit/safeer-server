@@ -1649,10 +1649,10 @@ function passengerCountFromText(t){
   return undefined;
 }
 function orderCountFromText(t){
-  let q=explicitCount(t,["اوردر(?:ين|ان|ات)?","اردر(?:ين|ان|ات)?","طلب(?:ين|ان|ات)?","طلبي(?:ه|ات)"]);if(q!==null)return q;
-  if(/(?:اوردرين|اوردران|اردرين|اردران|طلبين|طلبان)/.test(t))return 2;
-  if(/(?:^|\s)(?:اوردر|اردر|طلب|طلبيه)(?:\s|$)/.test(t))return 1;
-  if(/(?:اوردرات|اردرات|طلبات|طلبيات)/.test(t))return null;
+  let q=explicitCount(t,["اوردر(?:ين|ان|ات)?","اردر(?:ين|ان|ات)?"]);if(q!==null)return q;
+  if(/(?:اوردرين|اوردران|اردرين|اردران)/.test(t))return 2;
+  if(/(?:^|\s)(?:اوردر|اردر)(?:\s|$)/.test(t))return 1;
+  if(/(?:اوردرات|اردرات)/.test(t))return null;
   return undefined;
 }
 function fareDerivedQuantity(text){
