@@ -44,7 +44,7 @@ export function registerPushRoutes(app,{db,requireRoles}){
     // Reflect confirmed weekly-floor ledger entries; never initiate a deduction.
     try{
       await db.query(`INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url)
-        SELECT le.captain_id,'floor_charge','💰 تم خصم الأرضية',
+        SELECT le.captain_id,'floor_charge','💳 السفير | خصم الأرضية',
           'تم خصم '||TRIM(TO_CHAR(ABS(le.amount),'FM999999990.000'))||' د.أ من الرصيد',
           '/captain?view=statement&entry='||le.id::text
         FROM ledger_entries le
@@ -115,7 +115,7 @@ export function registerPushRoutes(app,{db,requireRoles}){
     let sent=0,failed=0;
     const recipients=new Set(rows.map(row=>String(row.captain_id)));
     for(const row of rows){
-      try{await webpush.sendNotification(row.subscription,JSON.stringify({title,body:message,tag:"admin-"+Date.now()+"-"+row.captain_id}),{TTL:3600});sent++}
+      try{await webpush.sendNotification(row.subscription,JSON.stringify({title:"👑 السفير | إعلان إداري",body:message,tag:"admin-"+Date.now()+"-"+row.captain_id}),{TTL:3600});sent++}
       catch(e){failed++;if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);app.log.warn({err:e},"Admin push failed")}
     }
     app.log.info({actor:request.user.sub,mode,recipients:recipients.size,sent,failed},"Admin push broadcast completed");
@@ -130,7 +130,7 @@ export function registerPushRoutes(app,{db,requireRoles}){
     if(!rows.length)return {ok:false,error:"captain_has_no_subscription",sent:0};
     let sent=0,failed=0;
     for(const row of rows){
-      try{await webpush.sendNotification(row.subscription,JSON.stringify({title:"🔔 إشعار تجريبي",body:"مبروك! إشعارات التطبيق شغالة 🎉",tag:"push-test-"+Date.now()}),{TTL:60});sent++}
+      try{await webpush.sendNotification(row.subscription,JSON.stringify({title:"🔔 السفير • تنبيه جديد",body:"مبروك! إشعارات التطبيق شغالة 🎉",tag:"push-test-"+Date.now()}),{TTL:60});sent++}
       catch(e){failed++;if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);app.log.warn({err:e,captainId},"push test failed")}
     }
     return {ok:sent>0,sent,failed,acceptedByPushService:true};
@@ -141,7 +141,7 @@ export async function notifyCaptainEvent(db,{captainId,kind,title,body,url='/cap
   if(!captainId)return false;
   try{
     if(await inboxReady===false)return false;
-    await db.query('INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url) VALUES($1,$2,$3,$4,$5)',[captainId,String(kind||'general').slice(0,40),String(title||'إشعار').slice(0,120),String(body||'').slice(0,500),String(url||'/captain').startsWith('/captain')?url:'/captain']);
+    await db.query('INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url) VALUES($1,$2,$3,$4,$5)',[captainId,String(kind||'general').slice(0,40),String(title||'🔔 السفير • تنبيه جديد').slice(0,120),String(body||'').slice(0,500),String(url||'/captain').startsWith('/captain')?url:'/captain']);
     return true;
   }catch(e){console.warn('Captain event notification skipped:',e.message);return false}
 }
@@ -172,7 +172,7 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
     for(const row of rows){
       const producing=String(row.captain_id)===String(producer?.id);
       const other=producing?consumer:producer;
-      const payload={title:producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب",body:`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,tag:`inventory-${String(doneMessageId||'').slice(-100)}-${row.captain_id}`};
+      const payload={title:producing?"📦 السفير | طلب جديد":"💰 السفير | حركة مالية",body:`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,tag:`inventory-${String(doneMessageId||'').slice(-100)}-${row.captain_id}`};
       try{await webpush.sendNotification(row.subscription,JSON.stringify(payload),{TTL:3600})}
       catch(e){if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);}
     }
