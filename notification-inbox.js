@@ -17,6 +17,15 @@ export function registerNotificationInbox(app,{db,requireRoles}){
       optional_enabled BOOLEAN NOT NULL DEFAULT TRUE,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
+  // Retention: delete only old read notifications; preserve unread records.
+  app.post('/api/notifications/admin/cleanup',{preHandler:[requireRoles('admin')]},async(req,reply)=>{
+    const days=Number(req.body?.days??90);
+    if(!Number.isSafeInteger(days)||days<30||days>730)return reply.code(400).send({ok:false,error:'invalid_retention_days'});
+    await ready;
+    const {rowCount}=await db.query(`DELETE FROM captain_notification_inbox
+      WHERE read_at IS NOT NULL AND created_at < NOW() - ($1::int * INTERVAL '1 day')`,[days]);
+    return {ok:true,deleted:rowCount,retentionDays:days};
+  });
   app.get('/api/notifications/admin/stats',{preHandler:[requireRoles('admin','accountant')]},async()=>{
     await ready;
     const {rows}=await db.query(`SELECT COUNT(*)::int AS total,
