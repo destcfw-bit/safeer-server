@@ -97,6 +97,21 @@ export function registerPushRoutes(app,{db,requireRoles}){
       ?await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions")
       :await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions WHERE captain_id=ANY($1::bigint[])",[ids]);
     if(rows.length>10000)return reply.code(413).send({ok:false,error:"too_many_devices"});
+    // Save a copy of the announcement for every selected captain, including offline devices.
+    // The inbox is independent of device push delivery.
+    try{
+      const recipientsToSave=mode==="selected"?ids:null;
+      if(mode==="all"){
+        await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
+          SELECT id,'announcement',$1,$2,'/captain',$3 FROM captains
+          ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[title,message,'admin-inbox-'+String(Date.now())+'-'+String(request.user.sub||'')]);
+      }else{
+        await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
+          SELECT id,'announcement',$1,$2,'/captain',$3 FROM captains WHERE id=ANY($4::bigint[])
+          ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[title,message,'admin-inbox-'+String(Date.now())+'-'+String(request.user.sub||''),recipientsToSave]);
+      }
+    }catch(e){app.log.warn({message:e.message},"Admin notification inbox save failed")}
+
     let sent=0,failed=0;
     const recipients=new Set(rows.map(row=>String(row.captain_id)));
     for(const row of rows){
