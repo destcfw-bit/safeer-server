@@ -17,11 +17,18 @@ const items=panel.querySelector('#nsItems');
 async function api(path,method='GET',body){const token=localStorage.getItem(KEY);if(!token)throw Error('سجّل الدخول أولاً');const res=await fetch(path,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});if(!res.ok)throw Error('تعذر الاتصال بالخادم');return res.json()}
 let busy=false;
 async function refresh(){if(busy||!localStorage.getItem(KEY))return;busy=true;try{const data=await api('/api/notifications/inbox');button.textContent='🔔 الإشعارات'+(data.unread?' ('+data.unread+')':'');if(panel.hidden)return;items.replaceChildren();if(!data.notifications.length){items.textContent='لا توجد إشعارات';return}for(const n of data.notifications){const row=document.createElement('div');row.className='nsItem'+(n.read_at?'':' unread');const title=document.createElement('strong');title.textContent=n.title;const body=document.createElement('div');body.textContent=n.body;const date=document.createElement('small');date.textContent=new Date(n.created_at).toLocaleString('ar-JO');row.append(title,body,date);if(typeof n.link==='string'&&n.link.startsWith('/captain')&&!n.link.startsWith('//')){const go=document.createElement('a');go.textContent='فتح التفاصيل ↗';go.href=n.link;go.style.cssText='color:#8fdbff;display:inline-block;margin:5px 0';row.append(go)}if(!n.read_at){const mark=document.createElement('button');mark.textContent='مقروء';mark.onclick=async()=>{await api('/api/notifications/read','POST',{id:Number(n.id)});refresh()};row.append(mark)}items.append(row)}}catch(e){if(!panel.hidden)items.textContent=e.message}finally{busy=false}}
-button.onclick=()=>{panel.hidden=false;refresh()};
+button.onclick=()=>{panel.hidden=false;refresh();loadPrefs()};
 if(new URLSearchParams(location.search).get('tab')==='notifications'){
   panel.hidden=false;
   history.replaceState(null,'',location.pathname+location.hash);
 }
+// Optional announcement preference; operational notifications are unaffected.
+const prefs=document.createElement('label');prefs.style.cssText='display:flex;align-items:center;gap:8px;margin:12px 0;font-size:13px';
+const prefsToggle=document.createElement('input');prefsToggle.type='checkbox';
+const prefsText=document.createElement('span');prefsText.textContent='استقبال الإعلانات الاختيارية';
+prefs.append(prefsToggle,prefsText);panel.insertBefore(prefs,items);
+async function loadPrefs(){try{const data=await api('/api/notifications/preferences');prefsToggle.checked=Boolean(data.optionalEnabled??data.preferences?.optionalEnabled??true)}catch(e){prefsText.textContent='تعذر تحميل إعدادات الإعلانات'}}
+prefsToggle.addEventListener('change',async()=>{prefsToggle.disabled=true;try{await api('/api/notifications/preferences','PUT',{optionalEnabled:prefsToggle.checked})}catch(e){prefsToggle.checked=!prefsToggle.checked;prefsText.textContent='تعذر حفظ الإعداد؛ حاول مجددًا'}finally{prefsToggle.disabled=false}});
 panel.querySelector('#nsClose').onclick=()=>panel.hidden=true;panel.querySelector('#nsReadAll').onclick=async()=>{try{await api('/api/notifications/read-all','POST');refresh()}catch(e){items.textContent=e.message}};
 function sync(){button.hidden=!localStorage.getItem(KEY);if(button.hidden)panel.hidden=true;else refresh()}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});window.addEventListener('storage',sync);window.addEventListener('load',sync);setInterval(sync,30000);sync();
