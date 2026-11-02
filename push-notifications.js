@@ -151,7 +151,8 @@ export function registerPushRoutes(app,{db,requireRoles}){
  * Never fail accounting when push delivery fails.
  */
 export async function notifyInventoryMovement(db,{producer,consumer,components,doneMessageId}={}){
-  if(!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY)return;
+  // Inbox persistence must work even when Web Push is not configured.
+  const pushConfigured=Boolean(process.env.VAPID_PUBLIC_KEY&&process.env.VAPID_PRIVATE_KEY);
   const ids=[...new Set([producer?.id,consumer?.id].filter(Boolean).map(String))];
   if(!ids.length)return;
   const amount=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0)*(c.type==='ORDER'?1:0.75),0);
@@ -165,8 +166,9 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
       const body=`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`;
       await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
         VALUES($1,'inventory',$2,$3,'/captain',$4) ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,
-        [id,title,body,'inventory-'+String(doneMessageId||'unknown')+'-'+String(id)]).catch(e=>console.warn("Notification inbox write failed:",e.message));
+        [id,title,body,doneMessageId?'inventory-'+String(doneMessageId).slice(0,130)+'-'+String(id):null]).catch(e=>console.warn("Notification inbox write failed:",e.message));
     }
+    if(!pushConfigured)return;
     const {rows}=await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions WHERE captain_id::text=ANY($1::text[])",[ids]);
     for(const row of rows){
       const producing=String(row.captain_id)===String(producer?.id);
