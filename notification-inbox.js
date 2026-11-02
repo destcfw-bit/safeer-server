@@ -11,7 +11,12 @@ export function registerNotificationInbox(app,{db,requireRoles}){
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     read_at TIMESTAMPTZ,
     UNIQUE(captain_id,dedupe_key)
-  ); CREATE INDEX IF NOT EXISTS captain_notification_inbox_recent ON captain_notification_inbox(captain_id,created_at DESC)`);
+  ); CREATE INDEX IF NOT EXISTS captain_notification_inbox_recent ON captain_notification_inbox(captain_id,created_at DESC);
+    CREATE TABLE IF NOT EXISTS captain_notification_preferences (
+      captain_id BIGINT PRIMARY KEY REFERENCES captains(id) ON DELETE CASCADE,
+      optional_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`);
   app.get('/api/notifications/admin/stats',{preHandler:[requireRoles('admin','accountant')]},async()=>{
     await ready;
     const {rows}=await db.query(`SELECT COUNT(*)::int AS total,
