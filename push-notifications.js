@@ -110,6 +110,15 @@ export function registerPushRoutes(app,{db,requireRoles}){
   });
 }
 
+export async function notifyCaptainEvent(db,{captainId,kind,title,body,url='/captain'}={}){
+  if(!captainId)return false;
+  try{
+    if(await inboxReady===false)return false;
+    await db.query('INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url) VALUES($1,$2,$3,$4,$5)',[captainId,String(kind||'general').slice(0,40),String(title||'إشعار').slice(0,120),String(body||'').slice(0,500),String(url||'/captain').startsWith('/captain')?url:'/captain']);
+    return true;
+  }catch(e){console.warn('Captain event notification skipped:',e.message);return false}
+}
+
 /**
  * Best-effort notifications for newly committed live inventory movements.
  * Never fail accounting when push delivery fails.
