@@ -1,3 +1,4 @@
+import {registerNotificationInbox} from "./notification-inbox.js";
 import {registerPushRoutes} from "./push-notifications.js";
 import {registerBalanceImportRoutes} from "./balance-transfer.js";
 import Fastify from "fastify";
@@ -99,6 +100,7 @@ function requireRoles(...roles) {
 
 registerBalanceImportRoutes(app,requireRoles);
 registerPushRoutes(app,{db,requireRoles});
+registerNotificationInbox(app,{db,requireRoles});
 
 function requireAbshirManualBridgeSecret(request,reply){
   const configured=String(process.env.ABSHIR_MANUAL_BRIDGE_SECRET||'');
