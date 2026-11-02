@@ -12,6 +12,24 @@ export function registerNotificationInbox(app,{db,requireRoles}){
     read_at TIMESTAMPTZ,
     UNIQUE(captain_id,dedupe_key)
   ); CREATE INDEX IF NOT EXISTS captain_notification_inbox_recent ON captain_notification_inbox(captain_id,created_at DESC)`);
+  app.get('/api/notifications/admin/stats',{preHandler:[requireRoles('admin','accountant')]},async()=>{
+    await ready;
+    const {rows}=await db.query(`SELECT COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE read_at IS NULL)::int AS unread,
+      COUNT(DISTINCT captain_id)::int AS captains,
+      COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '24 hours')::int AS last_24_hours
+      FROM captain_notification_inbox`);
+    return {ok:true,...rows[0]};
+  });
+  app.get('/api/notifications/admin/unsubscribed',{preHandler:[requireRoles('admin','accountant')]},async(req)=>{
+    await ready;
+    const q=String(req.query?.q||'').trim().slice(0,80);
+    const {rows}=await db.query(`SELECT c.id,c.name,c.phone FROM captains c
+      WHERE NOT EXISTS (SELECT 1 FROM captain_push_subscriptions s WHERE s.captain_id=c.id)
+      AND ($1='' OR c.name ILIKE '%'||$1||'%' OR c.phone LIKE '%'||regexp_replace($1,'[^0-9]','','g')||'%')
+      ORDER BY c.name LIMIT 100`,[q]);
+    return {ok:true,captains:rows};
+  });
   app.get('/api/notifications/inbox',{preHandler:[requireRoles('captain')]},async(req)=>{
     await ready;
     const captainId=req.user.captainId;
