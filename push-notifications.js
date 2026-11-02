@@ -110,16 +110,22 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
   const amount=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0)*(c.type==='ORDER'?1:0.75),0);
   const count=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0),0);
   try{
+    // Persist once per captain, including captains without a subscribed device.
+    for(const id of ids){
+      const producing=String(id)===String(producer?.id);
+      const other=producing?consumer:producer;
+      const title=producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب";
+      const body=`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`;
+      await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
+        VALUES($1,'inventory',$2,$3,'/captain',$4) ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,
+        [id,title,body,'inventory-'+String(doneMessageId||'unknown')+'-'+String(id)]).catch(e=>console.warn("Notification inbox write failed:",e.message));
+    }
     const {rows}=await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions WHERE captain_id::text=ANY($1::text[])",[ids]);
     for(const row of rows){
       const producing=String(row.captain_id)===String(producer?.id);
       const other=producing?consumer:producer;
       const payload={title:producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب",body:`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,tag:`inventory-${String(doneMessageId||'').slice(-100)}-${row.captain_id}`};
       try{
-        // Save the event for the captain even if their device is offline.
-        await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
-          VALUES($1,'inventory',$2,$3,'/captain',$4) ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,
-          [row.captain_id,payload.title,payload.body,'inventory-'+String(doneMessageId||'unknown')+'-'+String(row.captain_id)]).catch(e=>console.warn("Notification inbox write failed:",e.message));
         await webpush.sendNotification(row.subscription,JSON.stringify(payload),{TTL:3600});
       }
       catch(e){
