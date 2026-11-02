@@ -51,6 +51,14 @@ export function registerNotificationInbox(app,{db,requireRoles}){
       ORDER BY c.name LIMIT 100`,[q]);
     return {ok:true,captains:rows};
   });
+  // Aggregated category totals for the admin dashboard; no private message content.
+  app.get('/api/notifications/admin/categories',{preHandler:[requireRoles('admin','accountant')]},async()=>{
+    await ready;
+    const {rows}=await db.query(`SELECT category,COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE read_at IS NULL)::int AS unread
+      FROM captain_notification_inbox GROUP BY category ORDER BY total DESC`);
+    return {ok:true,categories:rows};
+  });
   app.get('/api/notifications/inbox',{preHandler:[requireRoles('captain')]},async(req)=>{
     await ready;
     const captainId=req.user.captainId;
