@@ -35,6 +35,20 @@ export function registerPushRoutes(app,{db,requireRoles}){
     const {rows}=await db.query(`SELECT COUNT(*)::int AS devices,COUNT(DISTINCT captain_id)::int AS captains,COUNT(*) FILTER (WHERE updated_at < NOW() - INTERVAL '30 days')::int AS stale_devices FROM captain_push_subscriptions`);
     return {ok:true,enabled:ready,...rows[0]};
   });
+  // Captain self-test: authenticated captains may only test their own devices.
+  app.post("/api/push/test-self",{preHandler:[requireRoles("captain")]},async(request,reply)=>{
+    if(!ready)return reply.code(503).send({ok:false,error:"push_not_configured"});
+    await init;
+    const captainId=request.user.captainId;
+    const {rows}=await db.query("SELECT endpoint,subscription FROM captain_push_subscriptions WHERE captain_id=$1 LIMIT 20",[captainId]);
+    if(!rows.length)return {ok:false,error:"captain_has_no_subscription",sent:0,failed:0};
+    let sent=0,failed=0;
+    for(const row of rows){
+      try{await webpush.sendNotification(row.subscription,JSON.stringify({title:"🔔 إشعار تجريبي",body:"تم اختبار إشعارات جهازك بنجاح",tag:"self-test-"+Date.now()}),{TTL:60});sent++}
+      catch(e){failed++;if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);app.log.warn({captainId,statusCode:e.statusCode||null},"Captain push self-test failed");}
+    }
+    return {ok:sent>0,sent,failed,acceptedByPushService:sent>0};
+  });
   // Admin-only push composer: targeted, selected captains, or all subscribed captains.
   app.get("/api/push/recipients",{preHandler:[requireRoles("admin","accountant")]},async(request)=>{
     await init;
