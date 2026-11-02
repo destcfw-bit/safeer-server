@@ -29,6 +29,12 @@ export function registerPushRoutes(app,{db,requireRoles}){
     const {rows}=await db.query("SELECT COUNT(*)::int AS count FROM captain_push_subscriptions WHERE captain_id=$1",[request.user.captainId]);
     return {ok:true,enabled:ready,subscriptions:rows[0].count};
   });
+  // Aggregate push subscription health (no endpoint or private key exposure).
+  app.get("/api/push/health",{preHandler:[requireRoles("admin","accountant")]},async()=>{
+    await init;
+    const {rows}=await db.query(`SELECT COUNT(*)::int AS devices,COUNT(DISTINCT captain_id)::int AS captains,COUNT(*) FILTER (WHERE updated_at < NOW() - INTERVAL '30 days')::int AS stale_devices FROM captain_push_subscriptions`);
+    return {ok:true,enabled:ready,...rows[0]};
+  });
   // Admin-only push composer: targeted, selected captains, or all subscribed captains.
   app.get("/api/push/recipients",{preHandler:[requireRoles("admin","accountant")]},async(request)=>{
     await init;
@@ -96,7 +102,10 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
       const other=producing?consumer:producer;
       const payload={title:producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب",body:`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,tag:`inventory-${String(doneMessageId||'').slice(-100)}-${row.captain_id}`};
       try{await webpush.sendNotification(row.subscription,JSON.stringify(payload),{TTL:3600})}
-      catch(e){if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);}
+      catch(e){
+        if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);
+        console.warn("Inventory push failed",{captainId:String(row.captain_id),statusCode:e.statusCode||null,message:e.message});
+      }
     }
   }catch(e){console.warn("Inventory push delivery failed:",e.message)}
 }
