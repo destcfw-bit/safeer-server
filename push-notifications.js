@@ -1,5 +1,7 @@
 import webpush from "web-push";
 
+let inboxReady=Promise.resolve(false);
+
 export function registerPushRoutes(app,{db,requireRoles}){
   const publicKey=process.env.VAPID_PUBLIC_KEY||"";
   const privateKey=process.env.VAPID_PRIVATE_KEY||"";
@@ -12,6 +14,7 @@ export function registerPushRoutes(app,{db,requireRoles}){
     kind TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, url TEXT NOT NULL DEFAULT '/captain',
     is_read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   ); CREATE INDEX IF NOT EXISTS captain_notification_inbox_recent ON captain_notification_inbox(captain_id,created_at DESC)`).catch(e=>{app.log.warn({err:e},'Notification inbox unavailable');return false});
+  inboxReady=inboxInit;
   app.get('/api/notifications',{preHandler:[requireRoles('captain')]},async(request)=>{
     if(await inboxInit===false)return {ok:false,notifications:[],unread:0};
     const id=request.user.captainId;
@@ -110,6 +113,7 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
   // Record events independently of Web Push. Failures never affect accounting.
   const parties=[['production',producer,consumer],['consumption',consumer,producer]];
   try {
+    if(await inboxReady===false)throw Error('inbox unavailable');
     for(const [kind,owner,other] of parties){
       if(!owner?.id)continue;
       const total=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0)*(c.type==='ORDER'?1:0.75),0);
