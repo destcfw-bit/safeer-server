@@ -1,10 +1,68 @@
 import webpush from "web-push";
+import {getBalance} from "./db.js";
+
+let inboxReady=Promise.resolve(false);
 
 export function registerPushRoutes(app,{db,requireRoles}){
   const publicKey=process.env.VAPID_PUBLIC_KEY||"";
   const privateKey=process.env.VAPID_PRIVATE_KEY||"";
   const ready=Boolean(publicKey&&privateKey);
   if(ready) webpush.setVapidDetails(process.env.VAPID_SUBJECT||"mailto:admin@dropcodejo.com",publicKey,privateKey);
+
+  // In-app inbox is independent of Web Push subscriptions.
+  const inboxInit=db.query(`CREATE TABLE IF NOT EXISTS captain_notification_inbox (
+    id BIGSERIAL PRIMARY KEY, captain_id BIGINT NOT NULL REFERENCES captains(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, url TEXT NOT NULL DEFAULT '/captain',
+    is_read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  ); CREATE INDEX IF NOT EXISTS captain_notification_inbox_recent ON captain_notification_inbox(captain_id,created_at DESC)`).catch(e=>{app.log.warn({err:e},'Notification inbox unavailable');return false});
+  inboxReady=inboxInit;
+  app.get('/api/notifications',{preHandler:[requireRoles('captain')]},async(request)=>{
+    if(await inboxInit===false)return {ok:false,notifications:[],unread:0};
+    const id=request.user.captainId;
+    const [items,count]=await Promise.all([
+      db.query('SELECT id,kind,title,body,url,is_read,created_at FROM captain_notification_inbox WHERE captain_id=$1 ORDER BY created_at DESC LIMIT 80',[id]),
+      db.query('SELECT COUNT(*)::int AS n FROM captain_notification_inbox WHERE captain_id=$1 AND NOT is_read',[id])
+    ]);
+    return {ok:true,notifications:items.rows,unread:count.rows[0].n};
+  });
+  app.get('/api/notifications/unread',{preHandler:[requireRoles('captain')]},async(request)=>{
+    if(await inboxInit===false)return {ok:false,unread:0};
+    const {rows}=await db.query('SELECT COUNT(*)::int AS n FROM captain_notification_inbox WHERE captain_id=$1 AND NOT is_read',[request.user.captainId]);
+    return {ok:true,unread:rows[0].n};
+  });
+  app.get('/api/notifications/balance-check',{preHandler:[requireRoles('captain')]},async(request)=>{
+    if(await inboxReady===false)return {ok:false};
+    const captainId=request.user.captainId;
+    const balance=Number(await getBalance(captainId));
+    if(!Number.isFinite(balance))return {ok:false};
+    if(balance<=3){
+      // Atomic cooldown prevents multiple alerts across concurrent requests.
+      await db.query(`INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url)
+        SELECT $1,'low_balance','⚠️ الرصيد منخفض',$2,'/captain'
+        WHERE NOT EXISTS (SELECT 1 FROM captain_notification_inbox WHERE captain_id=$1 AND kind='low_balance' AND created_at>NOW()-INTERVAL '24 hours')`,[captainId,`رصيدك الحالي ${balance.toFixed(3)} د.أ`]);
+    }
+    // Reflect confirmed weekly-floor ledger entries; never initiate a deduction.
+    try{
+      await db.query(`INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url)
+        SELECT le.captain_id,'floor_charge','💰 تم خصم الأرضية',
+          'تم خصم '||TRIM(TO_CHAR(ABS(le.amount),'FM999999990.000'))||' د.أ من الرصيد',
+          '/captain?view=statement&entry='||le.id::text
+        FROM ledger_entries le
+        WHERE le.captain_id=$1 AND le.entry_type='WEEKLY_DEDUCTION'
+          AND le.amount<0 AND le.reversed_at IS NULL
+          AND COALESCE(le.metadata->>'type','') IN ('WEEKLY_FLOOR','WEEKLY_THURSDAY_DEDUCTION')
+          AND le.created_at>NOW()-INTERVAL '48 hours'
+          AND NOT EXISTS (SELECT 1 FROM captain_notification_inbox n WHERE n.captain_id=le.captain_id AND n.kind='floor_charge' AND n.url='/captain?view=statement&entry='||le.id::text)`,[captainId]);
+    }catch(e){app.log.warn({err:e},'Floor notification sync skipped')}
+    return {ok:true,low:balance<=3};
+  });
+  app.post('/api/notifications/read',{preHandler:[requireRoles('captain')]},async(request,reply)=>{
+    if(await inboxInit===false)return reply.code(503).send({ok:false});
+    const id=Number(request.body?.id);
+    if(!Number.isSafeInteger(id)||id<=0)return reply.code(400).send({ok:false});
+    await db.query('UPDATE captain_notification_inbox SET is_read=TRUE WHERE id=$1 AND captain_id=$2',[id,request.user.captainId]);
+    return {ok:true};
+  });
   const init=db.query(`CREATE TABLE IF NOT EXISTS captain_push_subscriptions (
     endpoint TEXT PRIMARY KEY,
     captain_id BIGINT NOT NULL REFERENCES captains(id) ON DELETE CASCADE,
@@ -79,11 +137,31 @@ export function registerPushRoutes(app,{db,requireRoles}){
   });
 }
 
+export async function notifyCaptainEvent(db,{captainId,kind,title,body,url='/captain'}={}){
+  if(!captainId)return false;
+  try{
+    if(await inboxReady===false)return false;
+    await db.query('INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url) VALUES($1,$2,$3,$4,$5)',[captainId,String(kind||'general').slice(0,40),String(title||'إشعار').slice(0,120),String(body||'').slice(0,500),String(url||'/captain').startsWith('/captain')?url:'/captain']);
+    return true;
+  }catch(e){console.warn('Captain event notification skipped:',e.message);return false}
+}
+
 /**
  * Best-effort notifications for newly committed live inventory movements.
  * Never fail accounting when push delivery fails.
  */
 export async function notifyInventoryMovement(db,{producer,consumer,components,doneMessageId}={}){
+  // Record events independently of Web Push. Failures never affect accounting.
+  const parties=[['production',producer,consumer],['consumption',consumer,producer]];
+  try {
+    if(await inboxReady===false)throw Error('inbox unavailable');
+    for(const [kind,owner,other] of parties){
+      if(!owner?.id)continue;
+      const total=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0)*(c.type==='ORDER'?1:0.75),0);
+      await db.query(`INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url)
+        VALUES($1,$2,$3,$4,$5)`,[owner.id,kind,kind==='production'?'🟢 تم إنتاج طلب':'🔴 تم استهلاك طلب',`عمولة ${total.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,'/captain']);
+    }
+  } catch(e){console.warn('Notification inbox write skipped:',e.message)}
   if(!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY)return;
   const ids=[...new Set([producer?.id,consumer?.id].filter(Boolean).map(String))];
   if(!ids.length)return;
