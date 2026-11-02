@@ -894,7 +894,12 @@ app.get("/transfer-image/:token", async (request, reply) => {
 
 app.get("/accountant", async (request, reply) => {
   const html=await fs.readFile(new URL("./Accountant.html", import.meta.url),"utf8");
-  return reply.header("Cache-Control","no-store, no-cache, must-revalidate").type("text/html; charset=utf-8").send(html);
+  return reply.header("Cache-Control","no-store, no-cache, must-revalidate").type("text/html; charset=utf-8").send(html.replace("</body>",'<script defer src="/notification-suite-client.js"></script></body>'));
+});
+
+app.get("/notification-suite-client.js",async(request,reply)=>{
+  const js=await fs.readFile(new URL("./notification-suite-client.js",import.meta.url),"utf8");
+  return reply.header("Cache-Control","no-cache").type("application/javascript").send(js);
 });
 
 app.get("/captain", async (request, reply) => {
