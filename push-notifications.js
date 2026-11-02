@@ -24,6 +24,14 @@ export function registerPushRoutes(app,{db,requireRoles}){
       ON CONFLICT(endpoint) DO UPDATE SET captain_id=EXCLUDED.captain_id,subscription=EXCLUDED.subscription,updated_at=NOW()`,[endpoint,request.user.captainId,JSON.stringify(subscription)]);
     return {ok:true};
   });
+  // Allow a captain to disconnect only their own push endpoint.
+  app.post("/api/push/unsubscribe",{preHandler:[requireRoles("captain")]},async(request,reply)=>{
+    const endpoint=request.body?.endpoint;
+    if(typeof endpoint!=="string"||endpoint.length>2048)return reply.code(400).send({ok:false,error:"invalid_endpoint"});
+    await init;
+    const result=await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1 AND captain_id=$2",[endpoint,request.user.captainId]);
+    return {ok:true,removed:result.rowCount};
+  });
   app.get("/api/push/status",{preHandler:[requireRoles("captain")]},async(request)=>{
     await init;
     const {rows}=await db.query("SELECT COUNT(*)::int AS count FROM captain_push_subscriptions WHERE captain_id=$1",[request.user.captainId]);
@@ -34,6 +42,35 @@ export function registerPushRoutes(app,{db,requireRoles}){
     await init;
     const {rows}=await db.query(`SELECT COUNT(*)::int AS devices,COUNT(DISTINCT captain_id)::int AS captains,COUNT(*) FILTER (WHERE updated_at < NOW() - INTERVAL '30 days')::int AS stale_devices FROM captain_push_subscriptions`);
     return {ok:true,enabled:ready,...rows[0]};
+  });
+  // Captain self-test: authenticated captains may only test their own devices.
+  app.post("/api/push/test-self",{preHandler:[requireRoles("captain")]},async(request,reply)=>{
+    if(!ready)return reply.code(503).send({ok:false,error:"push_not_configured"});
+    await init;
+    const captainId=request.user.captainId;
+    const {rows}=await db.query("SELECT endpoint,subscription FROM captain_push_subscriptions WHERE captain_id=$1 LIMIT 20",[captainId]);
+    if(!rows.length)return {ok:false,error:"captain_has_no_subscription",sent:0,failed:0};
+    let sent=0,failed=0;
+    for(const row of rows){
+      try{await webpush.sendNotification(row.subscription,JSON.stringify({title:"🔔 إشعار تجريبي",body:"تم اختبار إشعارات جهازك بنجاح",tag:"self-test-"+Date.now()}),{TTL:60});sent++}
+      catch(e){failed++;if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);app.log.warn({captainId,statusCode:e.statusCode||null},"Captain push self-test failed");}
+    }
+    return {ok:sent>0,sent,failed,acceptedByPushService:sent>0};
+  });
+  // Audit metadata only; never store subscription secrets or device endpoints.
+  const auditReady=db.query(`CREATE TABLE IF NOT EXISTS push_admin_send_audit (
+    id BIGSERIAL PRIMARY KEY,
+    actor_id TEXT,
+    mode TEXT NOT NULL,
+    recipients INTEGER NOT NULL DEFAULT 0,
+    sent INTEGER NOT NULL DEFAULT 0,
+    failed INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  app.get("/api/push/audit",{preHandler:[requireRoles("admin","accountant")]},async()=>{
+    await auditReady;
+    const {rows}=await db.query("SELECT id,actor_id,mode,recipients,sent,failed,created_at FROM push_admin_send_audit ORDER BY id DESC LIMIT 100");
+    return {ok:true,entries:rows};
   });
   // Admin-only push composer: targeted, selected captains, or all subscribed captains.
   app.get("/api/push/recipients",{preHandler:[requireRoles("admin","accountant")]},async(request)=>{
@@ -56,16 +93,40 @@ export function registerPushRoutes(app,{db,requireRoles}){
     if(mode==="selected"&&(!ids.length||ids.length>250||ids.some(id=>!Number.isSafeInteger(id)||id<=0)))return reply.code(400).send({ok:false,error:"invalid_captains"});
     if(body.confirm!==true)return reply.code(400).send({ok:false,error:"confirmation_required"});
     await init;
+    // Optional announcements respect captain preferences. Mandatory operational alerts are separate.
     const {rows}=mode==="all"
-      ?await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions")
-      :await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions WHERE captain_id=ANY($1::bigint[])",[ids]);
+      ?await db.query(`SELECT s.endpoint,s.subscription,s.captain_id FROM captain_push_subscriptions s
+        LEFT JOIN captain_notification_preferences p ON p.captain_id=s.captain_id
+        WHERE COALESCE(p.optional_enabled,TRUE)=TRUE`)
+      :await db.query(`SELECT s.endpoint,s.subscription,s.captain_id FROM captain_push_subscriptions s
+        LEFT JOIN captain_notification_preferences p ON p.captain_id=s.captain_id
+        WHERE s.captain_id=ANY($1::bigint[]) AND COALESCE(p.optional_enabled,TRUE)=TRUE`,[ids]);
     if(rows.length>10000)return reply.code(413).send({ok:false,error:"too_many_devices"});
+    // Save a copy of the announcement for every selected captain, including offline devices.
+    // The inbox is independent of device push delivery.
+    try{
+      const recipientsToSave=mode==="selected"?ids:null;
+      if(mode==="all"){
+        await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
+          SELECT c.id,'announcement',$1,$2,'/captain',$3 FROM captains c LEFT JOIN captain_notification_preferences p ON p.captain_id=c.id WHERE COALESCE(p.optional_enabled,TRUE)=TRUE
+          ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[title,message,'admin-inbox-'+String(Date.now())+'-'+String(request.user.sub||'')]);
+      }else{
+        await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
+          SELECT c.id,'announcement',$1,$2,'/captain',$3 FROM captains c LEFT JOIN captain_notification_preferences p ON p.captain_id=c.id WHERE c.id=ANY($4::bigint[]) AND COALESCE(p.optional_enabled,TRUE)=TRUE
+          ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[title,message,'admin-inbox-'+String(Date.now())+'-'+String(request.user.sub||''),recipientsToSave]);
+      }
+    }catch(e){app.log.warn({message:e.message},"Admin notification inbox save failed")}
+
     let sent=0,failed=0;
     const recipients=new Set(rows.map(row=>String(row.captain_id)));
     for(const row of rows){
       try{await webpush.sendNotification(row.subscription,JSON.stringify({title,body:message,tag:"admin-"+Date.now()+"-"+row.captain_id}),{TTL:3600});sent++}
       catch(e){failed++;if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);app.log.warn({err:e},"Admin push failed")}
     }
+    try{
+      await auditReady;
+      await db.query("INSERT INTO push_admin_send_audit(actor_id,mode,recipients,sent,failed) VALUES($1,$2,$3,$4,$5)",[String(request.user.sub||""),mode,recipients.size,sent,failed]);
+    }catch(e){app.log.error({message:e.message},"Push audit persistence failed")}
     app.log.info({actor:request.user.sub,mode,recipients:recipients.size,sent,failed},"Admin push broadcast completed");
     return {ok:sent>0,recipients:recipients.size,sent,failed,unsubscribed:mode==="selected"?ids.length-recipients.size:null};
   });
@@ -90,18 +151,32 @@ export function registerPushRoutes(app,{db,requireRoles}){
  * Never fail accounting when push delivery fails.
  */
 export async function notifyInventoryMovement(db,{producer,consumer,components,doneMessageId}={}){
-  if(!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY)return;
+  // Inbox persistence must work even when Web Push is not configured.
+  const pushConfigured=Boolean(process.env.VAPID_PUBLIC_KEY&&process.env.VAPID_PRIVATE_KEY);
   const ids=[...new Set([producer?.id,consumer?.id].filter(Boolean).map(String))];
   if(!ids.length)return;
   const amount=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0)*(c.type==='ORDER'?1:0.75),0);
   const count=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0),0);
   try{
+    // Persist once per captain, including captains without a subscribed device.
+    for(const id of ids){
+      const producing=String(id)===String(producer?.id);
+      const other=producing?consumer:producer;
+      const title=producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب";
+      const body=`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`;
+      await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
+        VALUES($1,'inventory',$2,$3,'/captain',$4) ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,
+        [id,title,body,doneMessageId?'inventory-'+String(doneMessageId).slice(0,130)+'-'+String(id):null]).catch(e=>console.warn("Notification inbox write failed:",e.message));
+    }
+    if(!pushConfigured)return;
     const {rows}=await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions WHERE captain_id::text=ANY($1::text[])",[ids]);
     for(const row of rows){
       const producing=String(row.captain_id)===String(producer?.id);
       const other=producing?consumer:producer;
       const payload={title:producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب",body:`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,tag:`inventory-${String(doneMessageId||'').slice(-100)}-${row.captain_id}`};
-      try{await webpush.sendNotification(row.subscription,JSON.stringify(payload),{TTL:3600})}
+      try{
+        await webpush.sendNotification(row.subscription,JSON.stringify(payload),{TTL:3600});
+      }
       catch(e){
         if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);
         console.warn("Inventory push failed",{captainId:String(row.captain_id),statusCode:e.statusCode||null,message:e.message});
