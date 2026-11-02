@@ -2844,7 +2844,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
     const result=await recordReaction({producer,consumer,components,doneMessageId:done,reactionId:id,originalMessageId:original,userId,requestText,repairMode,safeRecovery,outageRecoveryJobId,occurredAt:eventIsoFromPayload(payload),comparisonMode});
     // Notify producer and consumer once for newly committed live requests only.
     if(!comparisonMode&&!repairMode&&!safeRecovery&&!result.duplicate&&!result.ignored&&result.transactions?.length){
-      void notifyInventoryMovement(db,{producer,consumer,components,doneMessageId:done,transactions:result.transactions}).catch(error=>console.warn('Nonblocking inventory notification failed:',error?.message||error));
+      await notifyInventoryMovement(db,{producer,consumer,components,doneMessageId:done});
     }
     await setEventStatus(done,"processed","تم اعتماد الرد بواسطة 👍");
     if(!req.synthetic)await setEventStatus(original,"processed","تم احتساب الطلب");
