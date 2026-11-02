@@ -93,9 +93,14 @@ export function registerPushRoutes(app,{db,requireRoles}){
     if(mode==="selected"&&(!ids.length||ids.length>250||ids.some(id=>!Number.isSafeInteger(id)||id<=0)))return reply.code(400).send({ok:false,error:"invalid_captains"});
     if(body.confirm!==true)return reply.code(400).send({ok:false,error:"confirmation_required"});
     await init;
+    // Optional announcements respect captain preferences. Mandatory operational alerts are separate.
     const {rows}=mode==="all"
-      ?await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions")
-      :await db.query("SELECT endpoint,subscription,captain_id FROM captain_push_subscriptions WHERE captain_id=ANY($1::bigint[])",[ids]);
+      ?await db.query(`SELECT s.endpoint,s.subscription,s.captain_id FROM captain_push_subscriptions s
+        LEFT JOIN captain_notification_preferences p ON p.captain_id=s.captain_id
+        WHERE COALESCE(p.optional_enabled,TRUE)=TRUE`)
+      :await db.query(`SELECT s.endpoint,s.subscription,s.captain_id FROM captain_push_subscriptions s
+        LEFT JOIN captain_notification_preferences p ON p.captain_id=s.captain_id
+        WHERE s.captain_id=ANY($1::bigint[]) AND COALESCE(p.optional_enabled,TRUE)=TRUE`,[ids]);
     if(rows.length>10000)return reply.code(413).send({ok:false,error:"too_many_devices"});
     // Save a copy of the announcement for every selected captain, including offline devices.
     // The inbox is independent of device push delivery.
