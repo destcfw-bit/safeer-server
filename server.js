@@ -1,4 +1,3 @@
-import {registerNotificationInbox} from "./notification-inbox.js";
 import {registerPushRoutes} from "./push-notifications.js";
 import {registerBalanceImportRoutes} from "./balance-transfer.js";
 import Fastify from "fastify";
@@ -99,7 +98,6 @@ function requireRoles(...roles) {
 }
 
 registerBalanceImportRoutes(app,requireRoles);
-registerNotificationInbox(app,{db,requireRoles});
 registerPushRoutes(app,{db,requireRoles});
 
 function requireAbshirManualBridgeSecret(request,reply){
@@ -199,7 +197,7 @@ function portalAmountAllowed(username,value){
 
 
 app.get("/captain.webmanifest", async (request, reply) => reply.type("application/manifest+json").header("Cache-Control","no-cache").send({name:"السفير | بوابة الكباتن",short_name:"السفير",lang:"ar",dir:"rtl",start_url:"/captain",scope:"/",display:"standalone",background_color:"#0B2341",theme_color:"#0B2341",icons:[{src:"/assets/safeer-official-logo.png",sizes:"any",type:"image/png",purpose:"any"}]}));
-app.get("/captain-sw.js", async (request, reply) => reply.type("application/javascript").header("Service-Worker-Allowed","/").header("Cache-Control","no-store").send("self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('push',e=>{let data={};try{data=e.data?.json()||{}}catch{};e.waitUntil(self.registration.showNotification(String(data.title||'إشعار السفير').slice(0,100),{body:String(data.body||'لديك تحديث جديد').slice(0,220),icon:'/assets/safeer-official-logo.png',data:{url:(typeof data.url==='string'&&data.url.startsWith('/captain')&&!data.url.startsWith('//'))?data.url:'/captain'},tag:String(data.tag||'safeer-update')}))});self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(self.clients.openWindow(e.notification.data?.url||'/captain'))});"));
+app.get("/captain-sw.js", async (request, reply) => reply.type("application/javascript").header("Service-Worker-Allowed","/").header("Cache-Control","no-store").send("self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('push',e=>{let data={};try{data=e.data?.json()||{}}catch{};e.waitUntil(self.registration.showNotification(String(data.title||'إشعار السفير').slice(0,100),{body:String(data.body||'لديك تحديث جديد').slice(0,220),icon:'/assets/safeer-official-logo.png',data:{url:'/captain'},tag:String(data.tag||'safeer-update')}))});self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(self.clients.openWindow('/captain'))});"));
 
 app.get("/favicon.ico", async (request, reply) => {
   return reply.code(204).send();
@@ -897,14 +895,9 @@ app.get("/accountant", async (request, reply) => {
   return reply.header("Cache-Control","no-store, no-cache, must-revalidate").type("text/html; charset=utf-8").send(html);
 });
 
-app.get("/notification-suite-client.js",async(request,reply)=>{
-  const js=await fs.readFile(new URL("./notification-suite-client.js",import.meta.url),"utf8");
-  return reply.header("Cache-Control","no-cache").type("application/javascript").send(js);
-});
-
 app.get("/captain", async (request, reply) => {
   const html=await fs.readFile(new URL("./Captain.html", import.meta.url),"utf8");
-  return reply.header("Cache-Control","no-store, no-cache, must-revalidate").type("text/html; charset=utf-8").send(html.replace("</body>",'<script defer src="/notification-suite-client.js"></script></body>'));
+  return reply.header("Cache-Control","no-store, no-cache, must-revalidate").type("text/html; charset=utf-8").send(html);
 });
 
 app.get("/recharge-portal", async (request, reply) => reply.redirect("/recharge-portal/"));
@@ -1047,15 +1040,6 @@ app.post("/captain/recharge/redeem", {preHandler:[requireRoles("captain")]}, asy
     captainId:request.user.captainId,
     code:String(code)
   });
-  // Record a successful top-up in the captain inbox; never interrupt redemption on notification errors.
-  try{
-    await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
-      VALUES($1,'recharge',$2,$3,'/captain',$4) ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[
-      request.user.captainId,'💳 تم شحن الرصيد',
-      'تم استخدام كود الشحن بنجاح. رصيدك الحالي: '+String(result.balance??'غير متاح')+' د.أ',
-      'recharge-redeemed-'+String(code).trim().slice(0,120)
-    ]);
-  }catch(error){request.log.warn({message:error.message},'Recharge inbox notification failed')}
   const groupRestore=Number(result.balance)>-0.75?await restoreCaptainToGroupIfEligible(request.user.captainId).catch(()=>null):null;
   return reply.code(200).send({ok:true,...result,groupRestore});
 });
