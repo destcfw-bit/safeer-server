@@ -41,6 +41,19 @@ export function registerPushRoutes(app,{db,requireRoles}){
         SELECT $1,'low_balance','⚠️ الرصيد منخفض',$2,'/captain'
         WHERE NOT EXISTS (SELECT 1 FROM captain_notification_inbox WHERE captain_id=$1 AND kind='low_balance' AND created_at>NOW()-INTERVAL '24 hours')`,[captainId,`رصيدك الحالي ${balance.toFixed(3)} د.أ`]);
     }
+    // Reflect confirmed weekly-floor ledger entries; never initiate a deduction.
+    try{
+      await db.query(`INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url)
+        SELECT le.captain_id,'floor_charge','💰 تم خصم الأرضية',
+          'تم خصم '||TRIM(TO_CHAR(ABS(le.amount),'FM999999990.000'))||' د.أ من الرصيد',
+          '/captain?view=statement&entry='||le.id::text
+        FROM ledger_entries le
+        WHERE le.captain_id=$1 AND le.entry_type='WEEKLY_DEDUCTION'
+          AND le.amount<0 AND le.reversed_at IS NULL
+          AND COALESCE(le.metadata->>'type','') IN ('WEEKLY_FLOOR','WEEKLY_THURSDAY_DEDUCTION')
+          AND le.created_at>NOW()-INTERVAL '48 hours'
+          AND NOT EXISTS (SELECT 1 FROM captain_notification_inbox n WHERE n.captain_id=le.captain_id AND n.kind='floor_charge' AND n.url='/captain?view=statement&entry='||le.id::text)`,[captainId]);
+    }catch(e){app.log.warn({err:e},'Floor notification sync skipped')}
     return {ok:true,low:balance<=3};
   });
   app.post('/api/notifications/read',{preHandler:[requireRoles('captain')]},async(request,reply)=>{
