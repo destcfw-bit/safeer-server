@@ -108,11 +108,11 @@ export function registerPushRoutes(app,{db,requireRoles}){
       const recipientsToSave=mode==="selected"?ids:null;
       if(mode==="all"){
         await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
-          SELECT id,'announcement',$1,$2,'/captain',$3 FROM captains
+          SELECT c.id,'announcement',$1,$2,'/captain',$3 FROM captains c LEFT JOIN captain_notification_preferences p ON p.captain_id=c.id WHERE COALESCE(p.optional_enabled,TRUE)=TRUE
           ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[title,message,'admin-inbox-'+String(Date.now())+'-'+String(request.user.sub||'')]);
       }else{
         await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
-          SELECT id,'announcement',$1,$2,'/captain',$3 FROM captains WHERE id=ANY($4::bigint[])
+          SELECT c.id,'announcement',$1,$2,'/captain',$3 FROM captains c LEFT JOIN captain_notification_preferences p ON p.captain_id=c.id WHERE c.id=ANY($4::bigint[]) AND COALESCE(p.optional_enabled,TRUE)=TRUE
           ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[title,message,'admin-inbox-'+String(Date.now())+'-'+String(request.user.sub||''),recipientsToSave]);
       }
     }catch(e){app.log.warn({message:e.message},"Admin notification inbox save failed")}
