@@ -26,6 +26,13 @@ export function registerNotificationInbox(app,{db,requireRoles}){
       WHERE read_at IS NOT NULL AND created_at < NOW() - ($1::int * INTERVAL '1 day')`,[days]);
     return {ok:true,deleted:rowCount,retentionDays:days};
   });
+  app.get('/api/notifications/admin/unread',{preHandler:[requireRoles('admin','accountant')]},async()=>{
+    await ready;
+    const {rows}=await db.query(`SELECT captain_id,COUNT(*)::int AS unread_count,MAX(created_at) AS latest_notification
+      FROM captain_notification_inbox WHERE read_at IS NULL
+      GROUP BY captain_id ORDER BY unread_count DESC LIMIT 100`);
+    return {ok:true,captains:rows};
+  });
   app.get('/api/notifications/admin/stats',{preHandler:[requireRoles('admin','accountant')]},async()=>{
     await ready;
     const {rows}=await db.query(`SELECT COUNT(*)::int AS total,
