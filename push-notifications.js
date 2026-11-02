@@ -24,6 +24,14 @@ export function registerPushRoutes(app,{db,requireRoles}){
       ON CONFLICT(endpoint) DO UPDATE SET captain_id=EXCLUDED.captain_id,subscription=EXCLUDED.subscription,updated_at=NOW()`,[endpoint,request.user.captainId,JSON.stringify(subscription)]);
     return {ok:true};
   });
+  // Allow a captain to disconnect only their own push endpoint.
+  app.post("/api/push/unsubscribe",{preHandler:[requireRoles("captain")]},async(request,reply)=>{
+    const endpoint=request.body?.endpoint;
+    if(typeof endpoint!=="string"||endpoint.length>2048)return reply.code(400).send({ok:false,error:"invalid_endpoint"});
+    await init;
+    const result=await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1 AND captain_id=$2",[endpoint,request.user.captainId]);
+    return {ok:true,removed:result.rowCount};
+  });
   app.get("/api/push/status",{preHandler:[requireRoles("captain")]},async(request)=>{
     await init;
     const {rows}=await db.query("SELECT COUNT(*)::int AS count FROM captain_push_subscriptions WHERE captain_id=$1",[request.user.captainId]);
