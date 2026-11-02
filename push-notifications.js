@@ -1,4 +1,5 @@
 import webpush from "web-push";
+import {getBalance} from "./db.js";
 
 let inboxReady=Promise.resolve(false);
 
@@ -28,6 +29,19 @@ export function registerPushRoutes(app,{db,requireRoles}){
     if(await inboxInit===false)return {ok:false,unread:0};
     const {rows}=await db.query('SELECT COUNT(*)::int AS n FROM captain_notification_inbox WHERE captain_id=$1 AND NOT is_read',[request.user.captainId]);
     return {ok:true,unread:rows[0].n};
+  });
+  app.get('/api/notifications/balance-check',{preHandler:[requireRoles('captain')]},async(request)=>{
+    if(await inboxReady===false)return {ok:false};
+    const captainId=request.user.captainId;
+    const balance=Number(await getBalance(captainId));
+    if(!Number.isFinite(balance))return {ok:false};
+    if(balance<=3){
+      // Atomic cooldown prevents multiple alerts across concurrent requests.
+      await db.query(`INSERT INTO captain_notification_inbox(captain_id,kind,title,body,url)
+        SELECT $1,'low_balance','⚠️ الرصيد منخفض',$2,'/captain'
+        WHERE NOT EXISTS (SELECT 1 FROM captain_notification_inbox WHERE captain_id=$1 AND kind='low_balance' AND created_at>NOW()-INTERVAL '24 hours')`,[captainId,`رصيدك الحالي ${balance.toFixed(3)} د.أ`]);
+    }
+    return {ok:true,low:balance<=3};
   });
   app.post('/api/notifications/read',{preHandler:[requireRoles('captain')]},async(request,reply)=>{
     if(await inboxInit===false)return reply.code(503).send({ok:false});
