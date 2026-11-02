@@ -150,12 +150,19 @@ export function registerPushRoutes(app,{db,requireRoles}){
  * Best-effort notifications for newly committed live inventory movements.
  * Never fail accounting when push delivery fails.
  */
-export async function notifyInventoryMovement(db,{producer,consumer,components,doneMessageId}={}){
+export async function notifyInventoryMovement(db,{producer,consumer,components,doneMessageId,transactions=[]}={}){
   // Inbox persistence must work even when Web Push is not configured.
   const pushConfigured=Boolean(process.env.VAPID_PUBLIC_KEY&&process.env.VAPID_PRIVATE_KEY);
   const ids=[...new Set([producer?.id,consumer?.id].filter(Boolean).map(String))];
   if(!ids.length)return;
-  const amount=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0)*(c.type==='ORDER'?1:0.75),0);
+  // Derive the displayed commission from committed ledger entries, not a second rate calculation.
+  const ledgerAmounts=new Map();
+  for(const entry of transactions){
+    const id=String(entry.captain_id||'');
+    const value=Number(entry.amount);
+    if(id&&Number.isFinite(value))ledgerAmounts.set(id,(ledgerAmounts.get(id)||0)+Math.abs(value));
+  }
+  const amountFor=id=>ledgerAmounts.has(String(id))?ledgerAmounts.get(String(id)).toFixed(3):'—';
   const count=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0),0);
   try{
     // Persist once per captain, including captains without a subscribed device.
@@ -163,7 +170,7 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
       const producing=String(id)===String(producer?.id);
       const other=producing?consumer:producer;
       const title=producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب";
-      const body=`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`;
+      const body=`${count} وحدة • عمولة ${amountFor(id)} د.أ • ${other?.name||'كابتن'}`;
       await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
         VALUES($1,'inventory',$2,$3,'/captain',$4) ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,
         [id,title,body,doneMessageId?'inventory-'+String(doneMessageId).slice(0,130)+'-'+String(id):null]).catch(e=>console.warn("Notification inbox write failed:",e.message));
@@ -173,7 +180,7 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
     for(const row of rows){
       const producing=String(row.captain_id)===String(producer?.id);
       const other=producing?consumer:producer;
-      const payload={title:producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب",body:`${count} وحدة • عمولة ${amount.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,tag:`inventory-${String(doneMessageId||'').slice(-100)}-${row.captain_id}`};
+      const payload={title:producing?"🟢 تم إنتاج طلب":"🔴 تم استهلاك طلب",body:`${count} وحدة • عمولة ${amountFor(row.captain_id)} د.أ • ${other?.name||'كابتن'}`,tag:`inventory-${String(doneMessageId||'').slice(-100)}-${row.captain_id}`};
       try{
         await webpush.sendNotification(row.subscription,JSON.stringify(payload),{TTL:3600});
       }
