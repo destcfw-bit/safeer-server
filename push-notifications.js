@@ -57,6 +57,21 @@ export function registerPushRoutes(app,{db,requireRoles}){
     }
     return {ok:sent>0,sent,failed,acceptedByPushService:sent>0};
   });
+  // Audit metadata only; never store subscription secrets or device endpoints.
+  const auditReady=db.query(`CREATE TABLE IF NOT EXISTS push_admin_send_audit (
+    id BIGSERIAL PRIMARY KEY,
+    actor_id TEXT,
+    mode TEXT NOT NULL,
+    recipients INTEGER NOT NULL DEFAULT 0,
+    sent INTEGER NOT NULL DEFAULT 0,
+    failed INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  app.get("/api/push/audit",{preHandler:[requireRoles("admin","accountant")]},async()=>{
+    await auditReady;
+    const {rows}=await db.query("SELECT id,actor_id,mode,recipients,sent,failed,created_at FROM push_admin_send_audit ORDER BY id DESC LIMIT 100");
+    return {ok:true,entries:rows};
+  });
   // Admin-only push composer: targeted, selected captains, or all subscribed captains.
   app.get("/api/push/recipients",{preHandler:[requireRoles("admin","accountant")]},async(request)=>{
     await init;
@@ -88,6 +103,10 @@ export function registerPushRoutes(app,{db,requireRoles}){
       try{await webpush.sendNotification(row.subscription,JSON.stringify({title,body:message,tag:"admin-"+Date.now()+"-"+row.captain_id}),{TTL:3600});sent++}
       catch(e){failed++;if(e.statusCode===404||e.statusCode===410)await db.query("DELETE FROM captain_push_subscriptions WHERE endpoint=$1",[row.endpoint]);app.log.warn({err:e},"Admin push failed")}
     }
+    try{
+      await auditReady;
+      await db.query("INSERT INTO push_admin_send_audit(actor_id,mode,recipients,sent,failed) VALUES($1,$2,$3,$4,$5)",[String(request.user.sub||""),mode,recipients.size,sent,failed]);
+    }catch(e){app.log.error({message:e.message},"Push audit persistence failed")}
     app.log.info({actor:request.user.sub,mode,recipients:recipients.size,sent,failed},"Admin push broadcast completed");
     return {ok:sent>0,recipients:recipients.size,sent,failed,unsubscribed:mode==="selected"?ids.length-recipients.size:null};
   });
