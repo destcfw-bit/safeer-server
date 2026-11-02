@@ -16,7 +16,7 @@ export function registerNotificationInbox(app,{db,requireRoles}){
       captain_id BIGINT PRIMARY KEY REFERENCES captains(id) ON DELETE CASCADE,
       optional_enabled BOOLEAN NOT NULL DEFAULT TRUE,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`);
+    )`).catch(error=>{console.warn('Optional notification inbox unavailable:',error?.message||error);return null;});
   // Retention: delete only old read notifications; preserve unread records.
   app.post('/api/notifications/admin/cleanup',{preHandler:[requireRoles('admin')]},async(req,reply)=>{
     const days=Number(req.body?.days??90);
