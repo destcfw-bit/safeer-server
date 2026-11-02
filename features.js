@@ -1877,6 +1877,13 @@ async function reverseReaction(doneId,userId,reason,{includeLegacy=false,preserv
   }
   const impacted=[...new Set([...q.rows,...partialEntries,...floorCandidates].map(x=>String(x.captain_id||'')).filter(Boolean))];
   if(!suppressBalanceSync)await Promise.all(impacted.map(id=>syncCaptainBalanceState(id).catch(()=>null)));
+  // Notification is best-effort and only emitted for actual reversals.
+  if(count){
+    try{
+      const {notifyCaptainEvent}=await import('./push-notifications.js');
+      await Promise.all(impacted.map(captainId=>notifyCaptainEvent(db,{captainId,kind:'cancellation',title:'🚫 تم إلغاء طلب',body:'تم إلغاء حركة طلب وتحديث الحساب',url:'/captain'})));
+    }catch(e){console.warn('Cancellation notification skipped:',e.message)}
+  }
   return count;
 }
 async function deleteForEveryoneMarker(messageIds=[]){
