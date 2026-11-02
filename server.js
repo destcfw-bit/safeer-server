@@ -1047,6 +1047,15 @@ app.post("/captain/recharge/redeem", {preHandler:[requireRoles("captain")]}, asy
     captainId:request.user.captainId,
     code:String(code)
   });
+  // Record a successful top-up in the captain inbox; never interrupt redemption on notification errors.
+  try{
+    await db.query(`INSERT INTO captain_notification_inbox(captain_id,category,title,body,link,dedupe_key)
+      VALUES($1,'recharge',$2,$3,'/captain',$4) ON CONFLICT(captain_id,dedupe_key) DO NOTHING`,[
+      request.user.captainId,'💳 تم شحن الرصيد',
+      'تم استخدام كود الشحن بنجاح. رصيدك الحالي: '+String(result.balance??'غير متاح')+' د.أ',
+      'recharge-redeemed-'+String(code).trim().slice(0,120)
+    ]);
+  }catch(error){request.log.warn({message:error.message},'Recharge inbox notification failed')}
   const groupRestore=Number(result.balance)>-0.75?await restoreCaptainToGroupIfEligible(request.user.captainId).catch(()=>null):null;
   return reply.code(200).send({ok:true,...result,groupRestore});
 });
