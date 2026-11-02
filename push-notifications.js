@@ -24,6 +24,11 @@ export function registerPushRoutes(app,{db,requireRoles}){
     ]);
     return {ok:true,notifications:items.rows,unread:count.rows[0].n};
   });
+  app.get('/api/notifications/unread',{preHandler:[requireRoles('captain')]},async(request)=>{
+    if(await inboxInit===false)return {ok:false,unread:0};
+    const {rows}=await db.query('SELECT COUNT(*)::int AS n FROM captain_notification_inbox WHERE captain_id=$1 AND NOT is_read',[request.user.captainId]);
+    return {ok:true,unread:rows[0].n};
+  });
   app.post('/api/notifications/read',{preHandler:[requireRoles('captain')]},async(request,reply)=>{
     if(await inboxInit===false)return reply.code(503).send({ok:false});
     const id=Number(request.body?.id);
