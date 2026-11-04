@@ -1373,6 +1373,29 @@ body{overflow-x:hidden}
 .nav button[data-view="green-settings"]{display:flex!important}
 #view-green-settings.active{display:block!important}
 </style>
+
+<style id="admin-withdrawals-theme">
+.aw-card,.aw-dashboard{border:1px solid rgba(125,133,149,.16)!important;border-radius:19px!important}
+.aw-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 18px}
+.aw-dashboard .aw-totals{grid-template-columns:repeat(2,minmax(0,1fr))}
+.aw-totals>div{padding:15px 18px;border-radius:14px;background:linear-gradient(135deg,rgba(145,150,162,.09),rgba(145,150,162,.025));border:1px solid rgba(130,140,155,.14)}
+.aw-totals small,.aw-totals strong{display:block}.aw-totals small{font-size:12px;color:var(--muted,#64748b);margin-bottom:9px}
+.aw-totals strong{font-size:23px;color:#b78532;font-weight:850;font-variant-numeric:tabular-nums}
+.aw-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;margin-top:20px}
+.aw-form .field{min-width:0}.aw-form .field .input{width:100%;box-sizing:border-box}.aw-form .aw-reason{grid-column:span 2}
+.aw-submit{grid-column:1/-1;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.aw-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:8px 0 18px}
+.aw-filters label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}
+.aw-table{width:100%;min-width:930px}.aw-table td{vertical-align:top}
+.aw-table td small{display:block;font-size:11px;color:var(--muted,#64748b);margin-top:5px;max-width:260px;white-space:normal}
+.aw-table .aw-voided{opacity:.65}.aw-voided-label{color:#9c501b;font-weight:800}.aw-active-label{color:#188053;font-weight:800}
+.aw-recent-list{margin-top:8px}.aw-recent-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 3px;border-bottom:1px solid rgba(125,135,145,.12)}
+.aw-recent-row:last-child{border-bottom:0}.aw-recent-row b,.aw-recent-row small{display:block}.aw-recent-row small{color:var(--muted,#64748b);font-size:12px;margin-top:4px}
+.aw-recent-row strong{font-size:16px;color:#b78532;white-space:nowrap}
+@media(max-width:850px){.aw-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.aw-form,.aw-totals,.aw-dashboard .aw-totals{grid-template-columns:1fr}.aw-form .aw-reason{grid-column:auto}.aw-filters label{flex:1 1 130px}.aw-submit .btn{width:100%}}
+</style>
+
 </head>
 <style id="safeer-login-luxe">
 #loginScreen.login-shell{min-height:100svh!important;max-width:none!important;padding:85px 18px 50px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 0%,#59401e 0%,transparent 45%),linear-gradient(140deg,#060a10,#14202d 60%,#070a10)!important;color:#f9e8c9!important}
@@ -3787,7 +3810,158 @@ body{overflow-x:hidden}
  const date=v=>new Date(v).toLocaleString('ar-JO',{timeZone:'Asia/Amman'});
  const lines=d.rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+h(date(r.created_at))+'</td><td><b>'+h(r.description||r.entry_type)+'</b><small>'+h(r.entry_type)+' · '+h(r.reference_id||'')+'</small></td><td class="pos">'+(r.amount>0?money(r.amount):'—')+'</td><td class="neg">'+(r.amount<0?money(-r.amount):'—')+'</td><td>'+money(r.running_balance)+'</td></tr>').join('');
  const css='*{box-sizing:border-box}body{font:12px Tahoma,Arial;direction:rtl;margin:0;background:#eef1f5;color:#243047}.page{max-width:980px;margin:20px auto;background:white;padding:30px;box-shadow:0 8px 30px #0002}.head{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #08758d;padding-bottom:16px}.brand{display:flex;align-items:center;gap:15px}.brand img{width:76px;height:76px;object-fit:contain}h1{color:#08758d;margin:0}h2{font-size:17px;margin:26px 0 12px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{border:1px solid #dce3ed;border-top:3px solid #08758d;padding:14px;border-radius:10px;background:#fafbfd}.card small{display:block;color:#6d788a}.card strong{display:block;font-size:19px;margin-top:6px}.info{display:flex;gap:20px;flex-wrap:wrap;padding:15px;background:#f4f7fa;border-radius:10px;margin-top:20px}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}th{background:#08758d;color:white;padding:10px 6px;text-align:right}td{padding:9px 6px;border-bottom:1px solid #e3e7ed;overflow-wrap:anywhere;vertical-align:top}td small{display:block;color:#788396;font-size:9px}tbody tr:nth-child(even){background:#f8fafc}th:nth-child(1){width:5%}th:nth-child(2){width:19%}th:nth-child(3){width:40%}th:nth-child(n+4){width:12%}.pos{color:#148453}.neg{color:#b33546}.actions{max-width:980px;margin:15px auto;text-align:left}.actions button{background:#08758d;color:white;border:0;border-radius:9px;padding:12px 22px;font-weight:bold}.foot{margin-top:22px;border-top:1px solid #ddd;padding-top:12px;color:#667} @page{size:A4;margin:12mm}@media print{body{background:white}.actions{display:none}.page{margin:0;padding:0;box-shadow:none;max-width:none}thead{display:table-header-group}tr,.card{break-inside:avoid}*{print-color-adjust:exact;-webkit-print-color-adjust:exact}}@media(max-width:650px){.page{padding:12px}.cards{grid-template-columns:repeat(2,1fr)}.head img{width:52px!important;height:52px!important}table{font-size:9px}}';
- win.document.open();win.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>كشف حساب '+h(d.captain.name)+'</title><style>'+css+'</style></head><body><div class="actions"><button onclick="window.print()">⬇️ حفظ PDF / طباعة</button></div><div class="page"><div class="head"><div class="brand"><img src="/assets/safeer-official-logo.png"><div><h1>السفير</h1><b>كشف حساب مالي تفصيلي</b></div></div><span>تاريخ الإصدار: '+h(date(new Date()))+'</span></div><div class="info"><b>الكابتن: '+h(d.captain.name)+'</b><span>الهاتف: '+h(d.captain.phone)+'</span><span>الفترة: '+h(d.from||'البداية')+' — '+h(d.to||'الآن')+'</span></div><h2>ملخص الحساب</h2><div class="cards">'+[['الرصيد الافتتاحي',d.opening_balance],['إجمالي له (+)',d.totals.credit],['إجمالي عليه (−)',d.totals.debit],['الرصيد النهائي',d.closing_balance]].map(x=>'<div class="card"><small>'+x[0]+'</small><strong>'+money(x[1])+' د.أ</strong></div>').join('')+'</div><h2>تفاصيل الحركات ('+d.rows.length+')</h2><table><thead><tr><th>#</th><th>التاريخ</th><th>الحركة والمرجع</th><th>له</th><th>عليه</th><th>الرصيد</th></tr></thead><tbody>'+ (lines||'<tr><td colspan="6">لا توجد حركات خلال الفترة</td></tr>')+'</tbody></table><div class="foot">كشف صادر عن نظام السفير · المبالغ بالدينار الأردني</div></div></body></html>');win.document.close();
+ win.document.open();win.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>كشف حساب '+h(d.captain.name)+'</title><style>'+css+'</style></head><body><div class="actions"><button onclick="window.print()">⬇️ حفظ PDF / طباعة</button></div><div class="page"><div class="head"><div class="brand"><img src="/assets/safeer-official-logo.png"><div><h1>السفير</h1><b>كشف حساب مالي تفصيلي</b></div></div><span>تاريخ الإصدار: '+h(date(new Date()))+'</span></div><div class="info"><b>الكابتن: '+h(d.captain.name)+'</b><span>الهاتف: '+h(d.captain.phone)+'</span><span>الفترة: '+h(d.from||'البداية')+' — '+h(d.to||'الآن')+'</span></div><h2>ملخص الحساب</h2><div class="cards">'+[['الرصيد الافتتاحي',d.opening_balance],['إجمالي له (+)',d.totals.credit],['إجمالي عليه (−)',d.totals.debit],['الرصيد النهائي',d.closing_balance]].map(x=>'<div class="card"><small>'+x[0]+'</small><strong>'+money(x[1])+' د.أ</strong></div>').join('')+'</div><h2>تفاصيل الحركات ('+d.rows.length+')</h2><table><thead><tr><th>#</th><th>التاريخ</th><th>الحركة والمرجع</th><th>له</th><th>عليه</th><th>الرصيد</th></tr></thead><tbody>'+ (lines||'<tr><td colspan="6">لا توجد حركات خلال الفترة</td></tr>')+'</tbody></table><div class="foot">كشف صادر عن نظام السفير · المبالغ بالدينار الأردني</div></div>
+<script id="admin-withdrawals-ui">
+(()=>{
+'use strict';
+const byId=id=>document.getElementById(id);
+const nav=byId('adminWithdrawalsNav');
+const dash=byId('adminWithdrawalsDashboard');
+const form=byId('awForm');
+let dashboardLast=0,loadingDashboard=false,pendingId=null;
+const names={salary:'رواتب',operations:'مصاريف تشغيل',transport:'مواصلات',owner:'سحب إداري',other:'أخرى'};
+const safe=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const currency=value=>Number(value||0).toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3})+' د.أ';
+function sessionToken(){
+  const delegated=new URLSearchParams(location.search).get('delegated')==='1';
+  if(delegated)return '';
+  return localStorage.getItem('abshir_accountant_token')||'';
+}
+function jordanToday(){
+ const parts=new Intl.DateTimeFormat('en',{timeZone:'Asia/Amman',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const o=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+ return o.year+'-'+o.month+'-'+o.day;
+}
+function dayName(value){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';
+ return new Date(value+'T12:00:00+03:00').toLocaleDateString('ar-JO',{timeZone:'Asia/Amman',weekday:'long'});
+}
+function freshRequestId(){
+ if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
+ const a=crypto.getRandomValues(new Uint8Array(16));a[6]=(a[6]&15)|64;a[8]=(a[8]&63)|128;
+ const h=Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');
+ return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+}
+function notify(message,error=false){
+ const node=byId('awFeedback');if(node){node.textContent=message;node.style.color=error?'#b91c1c':'#147d49';}
+}
+async function request(path,body){
+ const token=sessionToken();
+ if(!token)throw Error('سجّل الدخول بحساب الأدمن أولًا');
+ const res=await fetch(path,{method:body?'POST':'GET',headers:{
+  Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})
+ },...(body?{body:JSON.stringify(body)}:{})});
+ let result={};try{result=await res.json()}catch{}
+ if(!res.ok||result.ok===false){
+  const error=new Error(res.status===403?'هذه الصفحة للأدمن الرئيسي فقط':result.error||result.message||'تعذر تحميل السجل');
+  error.status=res.status;throw error;
+ }
+ return result;
+}
+function setAllowed(allowed){
+ if(nav)nav.style.display=allowed?'':'none';
+ if(dash)dash.style.display=allowed?'':'none';
+}
+function renderDashboard(data){
+ const summary=data.summary||{};
+ byId('awDashTotal').textContent=currency(summary.total);
+ byId('awDashMonth').textContent=currency(summary.currentMonth);
+ const rows=(data.rows||[]).filter(r=>!r.voided_at).slice(0,5);
+ const box=byId('awDashRows');
+ if(!rows.length){box.textContent='لا توجد سحوبات إدارة مسجلة بعد';return}
+ box.innerHTML=rows.map(r=>'<div class="aw-recent-row"><div><b>'+safe(r.title)+'</b><small>'+
+ safe(r.expense_date)+' • '+safe(dayName(r.expense_date))+' • '+safe(r.beneficiary||names[r.category]||'')+
+ '</small></div><strong>'+currency(r.amount)+'</strong></div>').join('');
+}
+async function refreshDashboard(force=false){
+ if(!sessionToken()){setAllowed(false);return}
+ if(loadingDashboard||(!force&&Date.now()-dashboardLast<20000))return;
+ loadingDashboard=true;
+ try{
+  const data=await request('/api/admin/withdrawals?limit=5');
+  setAllowed(true);renderDashboard(data);dashboardLast=Date.now();
+ }catch(error){
+  if(error.status===401||error.status===403)setAllowed(false);
+  else if(nav?.style.display!=='none')byId('awDashRows').textContent='تعذر تحديث السحوبات: '+error.message;
+ }finally{loadingDashboard=false}
+}
+function renderList(data){
+ const s=data.summary||{};
+ byId('awTotal').textContent=currency(s.total);
+ byId('awMonth').textContent=currency(s.currentMonth);
+ byId('awPeriodTotal').textContent=currency(s.filteredTotal);
+ const tbody=byId('awRows'),rows=data.rows||[];
+ if(!rows.length){tbody.innerHTML='<tr><td colspan="8">لا توجد سحوبات ضمن الفترة المحددة</td></tr>';return}
+ tbody.innerHTML=rows.map(r=>{
+  const voided=Boolean(r.voided_at);
+  return '<tr class="'+(voided?'aw-voided':'')+'">'+
+   '<td>'+safe(r.expense_date)+'<small>'+safe(dayName(r.expense_date))+'</small></td>'+
+   '<td>'+safe(names[r.category]||r.category)+'</td>'+
+   '<td><b>'+safe(r.title)+'</b><small>'+safe(r.beneficiary||'—')+'</small></td>'+
+   '<td>'+safe(r.reason)+'</td>'+
+   '<td><strong>'+currency(r.amount)+'</strong></td>'+
+   '<td>'+safe(r.created_by_name||'—')+'<small>'+safe(new Date(r.created_at).toLocaleString('ar-JO'))+'</small></td>'+
+   '<td>'+(voided?'<span class="aw-voided-label">ملغى</span><small>'+safe(r.void_reason||'')+'</small>':'<span class="aw-active-label">مسجّل</span>')+'</td>'+
+   '<td>'+(voided?'—':'<button type="button" class="btn btn-soft aw-void-btn" data-aw-void="'+safe(r.id)+'" data-aw-title="'+safe(r.title)+'">إلغاء</button>')+'</td>'+
+  '</tr>';
+ }).join('');
+}
+async function loadPage(){
+ if(!sessionToken())return;
+ const from=byId('awFrom').value,to=byId('awTo').value;
+ if(from&&to&&from>to){notify('تاريخ البداية بعد تاريخ النهاية',true);return}
+ const query=new URLSearchParams({limit:'300'});
+ if(from)query.set('from',from);
+ if(to)query.set('to',to);
+ const tbody=byId('awRows');tbody.innerHTML='<tr><td colspan="8">جارٍ تحميل السجل...</td></tr>';
+ try{renderList(await request('/api/admin/withdrawals?'+query.toString()))}
+ catch(error){tbody.innerHTML='<tr><td colspan="8">'+safe(error.message)+'</td></tr>'}
+}
+form?.addEventListener('input',()=>{pendingId=null;notify('')});
+form?.addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(!sessionToken()){notify('أدخل بحساب الأدمن',true);return}
+ const button=byId('awSave');
+ const payload={
+  expenseDate:byId('awDate').value,category:byId('awCategory').value,
+  title:byId('awTitle').value.trim(),beneficiary:byId('awBeneficiary').value.trim(),
+  amount:byId('awAmount').value,reason:byId('awReason').value.trim(),
+  requestId:pendingId||(pendingId=freshRequestId())
+ };
+ if(!confirm('تسجيل سحب إداري بقيمة '+currency(payload.amount)+' بعنوان "'+payload.title+'" بتاريخ '+payload.expenseDate+'؟'))return;
+ button.disabled=true;notify('جاري تسجيل السحب...');
+ try{
+  await request('/api/admin/withdrawals',payload);
+  notify('تم تسجيل السحب الإداري بنجاح');
+  const chosenDate=payload.expenseDate;form.reset();byId('awDate').value=chosenDate;updateDay();pendingId=null;
+  await Promise.all([loadPage(),refreshDashboard(true)]);
+ }catch(error){notify('تعذر الحفظ: '+error.message,true)}
+ finally{button.disabled=false}
+});
+byId('awRows')?.addEventListener('click',async event=>{
+ const button=event.target.closest('button[data-aw-void]');if(!button)return;
+ const id=button.dataset.awVoid;
+ const reason=prompt('سبب إلغاء السحب: '+(button.dataset.awTitle||''));
+ if(reason===null)return;
+ if(!reason.trim()){notify('يجب كتابة سبب الإلغاء',true);return}
+ if(!confirm('تأكيد إلغاء القيد رقم '+id+'؟ سيبقى ظاهرًا في السجل ولن يُحذف نهائيًا.'))return;
+ button.disabled=true;
+ try{
+  await request('/api/admin/withdrawals/'+encodeURIComponent(id)+'/void',{reason:reason.trim()});
+  notify('تم إلغاء القيد مع حفظ السبب في السجل');
+  await Promise.all([loadPage(),refreshDashboard(true)]);
+ }catch(error){notify('تعذر إلغاء القيد: '+error.message,true);button.disabled=false}
+});
+function updateDay(){byId('awDayName').textContent=dayName(byId('awDate').value)||'اختر التاريخ'}
+byId('awDate').value=jordanToday();byId('awDate').addEventListener('change',updateDay);updateDay();
+byId('awReload')?.addEventListener('click',loadPage);
+byId('awFilter')?.addEventListener('click',loadPage);
+byId('awClearFilter')?.addEventListener('click',()=>{byId('awFrom').value='';byId('awTo').value='';loadPage()});
+window.refreshAdminWithdrawals=refreshDashboard;
+window.loadAdminWithdrawalPage=loadPage;
+})();
+</script>
+</body></html>');win.document.close();
 }
 async function openCaptainStatement(id){
   const from=prompt('تاريخ البداية YYYY-MM-DD (فارغ = كل الفترات)','');
