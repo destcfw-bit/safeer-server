@@ -1764,10 +1764,14 @@ export async function setCaptainBalanceExact({
 
 export async function listLedger(captainId, limit=100) {
   const r = await db.query(`
-    SELECT * FROM ledger_entries
-    WHERE captain_id=$1
-      AND entry_type<>'CLEAN_START_RESET'
-    ORDER BY created_at DESC
+    SELECT le.*, u.username AS performed_by_username,
+           u.role AS performed_by_role,
+           COALESCE(NULLIF(u.display_name, ''), u.username) AS performed_by_name
+    FROM ledger_entries le
+    LEFT JOIN users u ON u.id = le.created_by_user_id
+    WHERE le.captain_id=$1
+      AND le.entry_type<>'CLEAN_START_RESET'
+    ORDER BY le.created_at DESC
     LIMIT $2
   `, [captainId, Math.min(Number(limit)||100,500)]);
   return r.rows;
