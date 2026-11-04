@@ -1,5 +1,6 @@
 import {registerPushRoutes} from "./push-notifications.js";
 import {registerBalanceImportRoutes} from "./balance-transfer.js";
+import {initAdminWithdrawalsSchema,registerAdminWithdrawalsRoutes} from "./admin-withdrawals.js";
 import Fastify from "fastify";
 import jwt from "@fastify/jwt";
 import bcrypt from "bcryptjs";
@@ -98,6 +99,7 @@ function requireRoles(...roles) {
 }
 
 registerBalanceImportRoutes(app,requireRoles);
+registerAdminWithdrawalsRoutes(app,{db,requireRoles});
 registerPushRoutes(app,{db,requireRoles});
 
 function requireAbshirManualBridgeSecret(request,reply){
@@ -1185,6 +1187,7 @@ async function initializeBackground(){
       startupError=null;
       startupStage="POSTGRES_INIT";
       await initDb();
+      await initAdminWithdrawalsSchema(db);
       if(await isCleanSlateResetRequired()){
         startupStage="CLEAN_SLATE_QUEUE_LOCK";
         await withTimeout(redis.ping(),10000,"clean_slate_redis");
