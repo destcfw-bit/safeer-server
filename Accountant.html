@@ -1459,6 +1459,7 @@ body{overflow-x:hidden}
         <button type="button" data-view="weekly-participants" onclick="switchView('weekly-participants',this);document.getElementById('weeklyParticipantsRefresh').click()"><span>📊</span> المتفاعلون والأرضية</button>
         <button type="button" data-view="captain-withdrawals" onclick="switchView('captain-withdrawals',this);document.getElementById('accountantWithdrawalRefresh').click()"><span>💸</span> طلبات سحب الرصيد</button>
         <button data-view="north-diagnostics" onclick="switchView('north-diagnostics',this)"><span>🔎</span> تشخيص جرد شمال</button>
+        <button id="adminWithdrawalsNav" data-view="admin-withdrawals" style="display:none" onclick="switchView('admin-withdrawals',this);window.loadAdminWithdrawalPage?.()"><span>🧾</span> سحوبات الإدارة</button>
         <button data-view="transactions" onclick="switchView('transactions',this)"><span>≡</span> سجل الحركات</button>
         <div class="nav-section-label">الأدوات المتقدمة</div>
         <details class="nav-group">
@@ -1499,6 +1500,39 @@ body{overflow-x:hidden}
 
       <section id="view-push-broadcast" class="view"><div class="panel"><h3>🔔 إرسال الإشعارات</h3><p>إرسال إشعار لجميع المشتركين أو لكباتن محددين.</p><div style="display:grid;gap:12px;max-width:750px"><select class="input" id="pushMode" onchange="document.getElementById('pushPicker').hidden=this.value!=='selected'"><option value="all">كل الكباتن</option><option value="selected">كباتن محددون</option></select><div id="pushPicker" hidden><input class="input" id="pushSearch" placeholder="بحث بالاسم أو الهاتف" oninput="clearTimeout(window.pushTimer);window.pushTimer=setTimeout(loadPushRecipients,300)"><div id="pushRecipients" style="max-height:260px;overflow:auto"></div></div><input class="input" id="pushTitle" maxlength="100" placeholder="عنوان الإشعار"><textarea class="input" id="pushMessage" maxlength="220" rows="4" placeholder="نص الإشعار"></textarea><div id="pushStatus" class="settlement-note">الإرسال للأجهزة المشتركة فقط، بعد تأكيدك.</div><button class="btn btn-primary" type="button" onclick="sendCaptainPush()">🔔 معاينة وتأكيد الإرسال</button></div></div></section>
        <section id="view-manual-broadcast" class="view" dir="rtl"><div class="panel"><div class="panel-head"><h3>📣 إرسال رسالة لقروب واتساب</h3></div><details style="margin:16px 0;padding:16px;border:1px solid var(--admin-border,#aaa);border-radius:14px"><summary style="cursor:pointer;font-weight:700">📣 إرسال رسالة مخصصة إلى قروب واتساب</summary><p>اختر قروبًا واحدًا، اكتب الرسالة، وراجعها قبل الإرسال. للإدارة الرئيسية فقط.</p><button type="button" class="btn btn-soft" id="broadcastLoadGroups">🔄 تحميل القروبات</button><select id="broadcastGroup" class="input" style="width:100%;margin:10px 0"><option value="">اختر القروب</option></select><textarea id="broadcastText" class="input" maxlength="4000" rows="5" placeholder="اكتب رسالتك هنا..." style="width:100%;box-sizing:border-box"></textarea><div id="broadcastStatus" style="margin:10px 0"></div><button type="button" class="btn btn-primary" id="broadcastSend">📨 إرسال للقروب المحدد</button></details></div></section>
+      <section id="view-admin-withdrawals" class="view" dir="rtl">
+        <div class="panel aw-card">
+          <div class="panel-head"><div><h3>🧾 سحوبات الإدارة</h3><p>سجل مستقل للرواتب والمصاريف وسحوبات الإدارة. لا يغيّر رصيد أي كابتن.</p></div></div>
+          <div class="aw-totals">
+            <div><small>إجمالي المصاريف المعتمدة</small><strong id="awTotal">—</strong></div>
+            <div><small>مصاريف هذا الشهر</small><strong id="awMonth">—</strong></div>
+            <div><small>إجمالي الفترة المختارة</small><strong id="awPeriodTotal">—</strong></div>
+          </div>
+          <form id="awForm" class="aw-form">
+            <div class="field"><label for="awDate">تاريخ السحب</label><input class="input" id="awDate" type="date" required><small id="awDayName" class="hint">اختر التاريخ</small></div>
+            <div class="field"><label for="awCategory">نوع السحب</label><select class="input" id="awCategory" required><option value="salary">راتب محاسب / موظف</option><option value="operations">مصاريف تشغيل</option><option value="transport">مواصلات</option><option value="owner">سحب إداري</option><option value="other">أخرى</option></select></div>
+            <div class="field"><label for="awTitle">عنوان السحب</label><input class="input" id="awTitle" placeholder="مثلاً: راتب محاسب" maxlength="120" required></div>
+            <div class="field"><label for="awBeneficiary">اسم المستفيد (اختياري)</label><input class="input" id="awBeneficiary" placeholder="اسم المحاسب أو الجهة" maxlength="120"></div>
+            <div class="field"><label for="awAmount">القيمة بالدينار الأردني</label><input class="input" id="awAmount" type="number" inputmode="decimal" step="0.001" min="0.001" max="9999999.999" required placeholder="15.000"></div>
+            <div class="field aw-reason"><label for="awReason">السبب / التفاصيل</label><textarea class="input" id="awReason" maxlength="500" rows="2" placeholder="لشو تم صرف المبلغ؟" required></textarea></div>
+            <div class="aw-submit"><button id="awSave" class="btn btn-primary" type="submit">＋ تسجيل سحب إداري</button><span id="awFeedback" role="status" aria-live="polite"></span></div>
+          </form>
+        </div>
+        <div class="panel aw-card">
+          <div class="panel-head"><div><h3>سجل سحوبات الإدارة</h3><p>آخر 300 قيد كحد أقصى؛ الإلغاء موثّق ولا يحذف السجل.</p></div><button type="button" id="awReload" class="btn btn-soft">↻ تحديث</button></div>
+          <div class="aw-filters">
+            <label>من تاريخ <input class="input" type="date" id="awFrom"></label>
+            <label>إلى تاريخ <input class="input" type="date" id="awTo"></label>
+            <button type="button" id="awFilter" class="btn btn-soft">تطبيق الفترة</button>
+            <button type="button" id="awClearFilter" class="btn btn-soft">كل التواريخ</button>
+          </div>
+          <div class="table-wrap"><table class="table aw-table">
+            <thead><tr><th>التاريخ / اليوم</th><th>النوع</th><th>الوصف والمستفيد</th><th>السبب</th><th>القيمة</th><th>سجّلها</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody id="awRows"><tr><td colspan="8">افتح الصفحة لعرض السجلات</td></tr></tbody>
+          </table></div>
+        </div>
+      </section>
+
       <section id="view-dashboard" class="view active">
         <div class="dashboard-hero">
           <div class="hero-copy">
@@ -1517,6 +1551,18 @@ body{overflow-x:hidden}
           </div>
         </div>
         <div id="statsCards" class="cards"></div>
+        <div id="adminWithdrawalsDashboard" class="panel aw-dashboard" style="display:none" dir="rtl">
+          <div class="panel-head">
+            <div><h3>🧾 سحوبات الإدارة</h3><p>مصروفات ورواتب الإدارة • سجل منفصل لا يخصم من محافظ الكباتن</p></div>
+            <button type="button" class="btn btn-soft" onclick="document.getElementById('adminWithdrawalsNav').click()">عرض السجل الكامل</button>
+          </div>
+          <div class="aw-totals">
+            <div><small>إجمالي سحوبات الإدارة</small><strong id="awDashTotal">—</strong></div>
+            <div><small>سحوبات الشهر الحالي</small><strong id="awDashMonth">—</strong></div>
+          </div>
+          <div id="awDashRows" class="aw-recent-list">جارٍ التحميل…</div>
+        </div>
+
         <div id="smartAlerts" class="alert-grid"></div>
         <div class="grid-2">
           <div class="panel"><div class="panel-head"><div><h3>أحدث الحوالات</h3><p>آخر طلبات الشحن المرسلة</p></div></div><div id="latestTransfers"></div></div>
@@ -2651,6 +2697,7 @@ body{overflow-x:hidden}
   }
 
   function renderDashboard(){
+    window.refreshAdminWithdrawals?.();
     const latest=state.transfers.slice(0,5);
     $('latestTransfers').innerHTML=latest.length?`<div class="table-wrap"><table class="table"><thead><tr><th>الكابتن</th><th>الفئة</th><th>المدفوع</th><th>الحالة</th><th></th></tr></thead><tbody>${latest.map(t=>`<tr><td>${esc(t.CaptainName)}</td><td>${money(t.PackageBalance)}</td><td>${money(t.PaidAmount)}</td><td>${statusBadge(t.Status)}</td><td><button class="btn btn-soft" onclick="openTransferFromDashboard('${esc(t.ID)}')">${t.Status==='PENDING'?'مراجعة':'تفاصيل'}</button></td></tr>`).join('')}</tbody></table></div>`:empty('لا توجد حوالات');
     const frozen=state.captains.filter(c=>c.status!=='ACTIVE').slice(0,8);
