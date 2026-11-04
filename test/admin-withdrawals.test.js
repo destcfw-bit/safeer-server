@@ -42,7 +42,7 @@ function fakeApp(db){
 
 test("all expense endpoints require a real admin role",()=>{
  const h=fakeApp({query:async()=>({rows:[]})});
- assert.deepEqual(h.roles,[["admin"],["admin"],["admin"]]);
+ assert.deepEqual(h.roles,[["admin"]]); // Shared guard is applied to all three routes
  for(const route of h.routes.values())assert.equal(route.opts.preHandler.length,1);
 });
 
