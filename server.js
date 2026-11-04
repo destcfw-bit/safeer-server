@@ -208,20 +208,17 @@ app.get("/assets/safeer-official-logo.png", async (request, reply) => {
   return reply.type("image/png").header("Cache-Control","public, max-age=3600").send(image);
 });
 
-app.get("/assets/safeer-logo.svg", async (request, reply) => {
-  const image=await fs.readFile(new URL("./assets/safeer-logo.svg", import.meta.url));
-  return reply.type("image/svg+xml").send(image);
-});
+// Backward-compatible asset alias: the historical file no longer exists.
+// Keep old bookmarks/clients working while serving the official Safeer logo.
+app.get("/assets/safeer-logo.svg", async (request, reply) => reply.redirect("/assets/safeer-official-logo.png"));
 
-app.get("/assets/ezwa-logo-gold.svg", async (request, reply) => {
-  const image=await fs.readFile(new URL("./assets/ezwa-logo-gold.svg", import.meta.url));
-  return reply.type("image/svg+xml").header("Cache-Control","public, max-age=3600").send(image);
-});
+// Backward-compatible asset alias: the historical file no longer exists.
+// Keep old bookmarks/clients working while serving the official Safeer logo.
+app.get("/assets/ezwa-logo-gold.svg", async (request, reply) => reply.redirect("/assets/safeer-official-logo.png"));
 
-app.get("/assets/ezwa-logo.png", async (request, reply) => {
-  const image=await fs.readFile(new URL("./assets/ezwa-logo.png", import.meta.url));
-  return reply.type("image/png").header("Cache-Control","public, max-age=86400").send(image);
-});
+// Backward-compatible asset alias: the historical file no longer exists.
+// Keep old bookmarks/clients working while serving the official Safeer logo.
+app.get("/assets/ezwa-logo.png", async (request, reply) => reply.redirect("/assets/safeer-official-logo.png"));
 
 app.get("/", async (request, reply) => reply.redirect("/captain"));
 
