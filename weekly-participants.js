@@ -25,6 +25,7 @@ export async function weeklyParticipantsReport() {
     ORDER BY interactions DESC,c.name
   `,[start,end]);
   const captains=rows.rows.map(r=>({id:r.id,name:r.name,phone:r.phone,interactions:Number(r.interactions)}));
-  const floor=1.5;
+  // Display estimate only: Safeer weekly floor is one dinar (no ledger writes here).
+  const floor=1;
   return {start,end,captains,count:captains.length,floor,estimatedTotal:Number((captains.length*floor).toFixed(3)),note:'تقرير تقديري للحركات المحاسبية الفعلية، دون خصم أرصدة'};
 }
