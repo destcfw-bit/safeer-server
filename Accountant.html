@@ -1377,7 +1377,7 @@ body{overflow-x:hidden}
 <style id="admin-withdrawals-theme">
 .aw-card,.aw-dashboard{border:1px solid rgba(125,133,149,.16)!important;border-radius:19px!important}
 .aw-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 18px}
-.aw-dashboard .aw-totals{grid-template-columns:repeat(2,minmax(0,1fr))}
+.aw-dashboard .aw-totals{grid-template-columns:repeat(3,minmax(0,1fr))}
 .aw-totals>div{padding:15px 18px;border-radius:14px;background:linear-gradient(135deg,rgba(145,150,162,.09),rgba(145,150,162,.025));border:1px solid rgba(130,140,155,.14)}
 .aw-totals small,.aw-totals strong{display:block}.aw-totals small{font-size:12px;color:var(--muted,#64748b);margin-bottom:9px}
 .aw-totals strong{font-size:23px;color:#b78532;font-weight:850;font-variant-numeric:tabular-nums}
@@ -1582,6 +1582,7 @@ body{overflow-x:hidden}
           <div class="aw-totals">
             <div><small>إجمالي سحوبات الإدارة</small><strong id="awDashTotal">—</strong></div>
             <div><small>سحوبات الشهر الحالي</small><strong id="awDashMonth">—</strong></div>
+            <div><small>الرصيد بعد سحوبات الإدارة</small><strong id="awDashNetBalance">—</strong><small>إجمالي الأرصدة − السحوبات (للعرض فقط)</small></div>
           </div>
           <div id="awDashRows" class="aw-recent-list">جارٍ التحميل…</div>
         </div>
@@ -2712,10 +2713,13 @@ body{overflow-x:hidden}
     requestAnimationFrame(()=>{renderViewData(name);requestAnimationFrame(()=>enhanceMobileTables(target||document));});
   }
 
+  // Reuse the exact total already shown on the dashboard; no write to captain ledgers.
+  window.getAdminWithdrawalsCaptainBalance=()=>Number(state?.stats?.totalBalances);
   function renderStats(){
     const s=state.stats;
     const cards=[['إجمالي الكباتن',s.totalCaptains,'كل الحسابات',true],['النشطون',s.activeCaptains,'رصيد كافٍ',true],['المجمّدون',s.frozenCaptains,'بحاجة إلى شحن',true],['حوالات معلقة',s.pendingTransfers,'بانتظار المراجعة',true],['حركات واتساب',s.pendingWhatsApp,'بانتظار الاعتماد',true],['إجمالي الأرصدة',money(s.totalBalances),'داخل محافظ الكباتن',false]];
     $('statsCards').innerHTML=cards.map((x,i)=>`<article class="stat" style="animation-delay:${i*55}ms"><span>${x[0]}</span><strong ${x[3]?`data-count="${Number(x[1]||0)}"`:''}>${x[3]?'0':x[1]}</strong><small>${x[2]}</small></article>`).join('');
+    window.updateAdminWithdrawalNet?.();
     requestAnimationFrame(animateCounters);
   }
 
@@ -6790,10 +6794,25 @@ function setAllowed(allowed){
  if(nav)nav.style.display=allowed?'':'none';
  if(dash)dash.style.display=allowed?'':'none';
 }
+let activeAdminWithdrawalTotal=null;
+function updateAdminWithdrawalNet(){
+ const node=byId('awDashNetBalance');
+ if(!node)return;
+ const total=window.getAdminWithdrawalsCaptainBalance?.();
+ const captainBalance=Number(total);
+ if(activeAdminWithdrawalTotal===null||!Number.isFinite(captainBalance)){
+  node.textContent='—';return;
+ }
+ // Work in thousandths of a dinar to avoid floating-point subtraction artifacts.
+ const result=(Math.round(captainBalance*1000)-Math.round(activeAdminWithdrawalTotal*1000))/1000;
+ node.textContent=currency(result);
+}
 function renderDashboard(data){
  const summary=data.summary||{};
  byId('awDashTotal').textContent=currency(summary.total);
  byId('awDashMonth').textContent=currency(summary.currentMonth);
+ activeAdminWithdrawalTotal=Number(summary.total);
+ updateAdminWithdrawalNet();
  const rows=(data.rows||[]).filter(r=>!r.voided_at).slice(0,5);
  const box=byId('awDashRows');
  if(!rows.length){box.textContent='لا توجد سحوبات إدارة مسجلة بعد';return}
@@ -6885,6 +6904,7 @@ byId('awDate').value=jordanToday();byId('awDate').addEventListener('change',upda
 byId('awReload')?.addEventListener('click',loadPage);
 byId('awFilter')?.addEventListener('click',loadPage);
 byId('awClearFilter')?.addEventListener('click',()=>{byId('awFrom').value='';byId('awTo').value='';loadPage()});
+window.updateAdminWithdrawalNet=updateAdminWithdrawalNet;
 window.refreshAdminWithdrawals=refreshDashboard;
 window.loadAdminWithdrawalPage=loadPage;
 })();
