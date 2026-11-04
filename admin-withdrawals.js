@@ -115,10 +115,10 @@ export function registerAdminWithdrawalsRoutes(app,{db,requireRoles}) {
         "VALUES($1::date,$2,$3,$4,$5,$6,$7::uuid,$8) ON CONFLICT(request_id) DO NOTHING RETURNING id"
       ].join(" "),[data.expenseDate,data.category,data.title,data.beneficiary,data.reason,data.amount,data.requestId,request.user.sub]);
       if(!added.rowCount){
-        const existing=await client.query("SELECT id,created_by_user_id,expense_date,category,title,beneficiary,reason,amount FROM admin_withdrawals WHERE request_id=$1::uuid",[data.requestId]);
+        const existing=await client.query("SELECT id,created_by_user_id,to_char(expense_date,'YYYY-MM-DD') expense_date,category,title,beneficiary,reason,amount FROM admin_withdrawals WHERE request_id=$1::uuid",[data.requestId]);
         const item=existing.rows[0];
         const same= item&&String(item.created_by_user_id)===String(request.user.sub)
-          &&String(item.category)===data.category &&String(item.title)===data.title
+          &&String(item.expense_date)===data.expenseDate &&String(item.category)===data.category &&String(item.title)===data.title
           &&String(item.beneficiary)===data.beneficiary &&String(item.reason)===data.reason
           &&Number(item.amount)===data.amount;
         if(!same)throw invalid("هذه العملية مسجلة من قبل بمعلومات مختلفة",409);
