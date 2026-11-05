@@ -783,12 +783,9 @@ app.post("/webhook/dropconnect", async (request, reply) => {
     return reply.code(200).send({ok:true,ignored:true,reason:"unsupported_event"});
   }
 
-  if(String(payload?.messageData?.typeMessage||"")==="reactionMessage"){
-    const emoji=String(payload?.messageData?.reactionMessageData?.text||"").replace(/\uFE0F/g,"").trim();
-    if(emoji && emoji!=="👍" && emoji!=="🚫" && !/^[1-9]️⃣$/.test(emoji) && emoji!=="🔟"){
-      return reply.code(200).send({ok:true,ignored:true,reason:"north_reaction_not_allowed"});
-    }
-  }
+  // Forward all reaction updates to the accounting engine. Only 👍 creates
+  // commission; a heart or other replacement must be observed so an old 👍
+  // can be reversed. Admin 🚫 and partial adjustments are validated downstream.
 
   if(isUnified && String(body?.action||"")==="message"){
     await autoRegisterNorthCaptain(body,request.log).catch(err=>request.log.warn({err},"North captain auto-registration skipped"));
