@@ -2679,13 +2679,9 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
   if(type==="reactionMessage"){
     const emoji=reactionEmoji(md),rawDone=targetId(md);
     if(inventoryOptions(payload).north && emoji && !isCommissionLike(emoji)){
-      // North permits manager cancellations and partial adjustments only.
-      // Other reactions remain ignored, as before.
-      if(emoji!=="🚫"&&!partialEmojiQuantity(emoji)){
-        await setEventStatus(id,"ignored","قروب شمال: هذا الريأكشن غير محاسبي");
-        return {ignored:true,reason:"north_reaction_not_allowed"};
-      }
-      if(!(await cancellationAuthorized(sender))){
+      // Non-like reactions never APPROVE a North commission, but must reach
+      // replacement handling below to undo a previous 👍 on this same reply.
+      if((emoji==="🚫"||partialEmojiQuantity(emoji))&&!(await cancellationAuthorized(sender))){
         await setEventStatus(id,"ignored","قروب شمال: 🚫 والأرقام للإدارة المخوّلة فقط");
         return {ignored:true,reason:"north_manager_only"};
       }
