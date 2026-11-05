@@ -6660,7 +6660,7 @@ window.openOldBalanceTransfer=function(){
     if(withdrawalTab==='pending'){
      const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-top:14px';
      for(const [status,title] of [['transferred','✅ تم التحويل'],['kept','📁 إبقاء'],['cancelled','🚫 إلغاء الطلب']]){
-      if(w.status==='approved'&&status==='kept')continue;
+      if(w.status==='approved'&&(status==='kept'||status==='cancelled'))continue;
       const button=document.createElement('button');button.type='button';button.className='btn '+(status==='transferred'?'btn-primary':'btn-soft');button.textContent=title;
       button.onclick=async()=>{
        const message=status==='transferred'?'تأكيد التحويل وخصم '+w.amount+' د.أ من رصيد '+w.name+'؟':status==='cancelled'?'إلغاء طلب السحب #'+w.id+' بدون خصم أي رصيد؟ هذا الإلغاء نهائي.':'تأكيد إبقاء المبلغ في رصيد '+w.name+' وإغلاق الطلب بدون خصم؟';
