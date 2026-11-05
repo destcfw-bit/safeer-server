@@ -1,6 +1,7 @@
 import {registerPushRoutes} from "./push-notifications.js";
 import {registerBalanceImportRoutes} from "./balance-transfer.js";
 import {initAdminWithdrawalsSchema,registerAdminWithdrawalsRoutes} from "./admin-withdrawals.js";
+import {registerFloorDeductionReport} from "./floor-deductions-report.js";
 import Fastify from "fastify";
 import jwt from "@fastify/jwt";
 import bcrypt from "bcryptjs";
@@ -100,6 +101,7 @@ function requireRoles(...roles) {
 
 registerBalanceImportRoutes(app,requireRoles);
 registerAdminWithdrawalsRoutes(app,{db,requireRoles});
+registerFloorDeductionReport(app,{db,requireRoles});
 registerPushRoutes(app,{db,requireRoles});
 
 function requireAbshirManualBridgeSecret(request,reply){
