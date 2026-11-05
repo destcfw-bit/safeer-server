@@ -34,7 +34,7 @@ test('floor summary API is read-only and role-restricted',async()=>{
 
 test('dashboard has one actual-floor tile, compiles and fetches protected totals',()=>{
  const html=readFileSync(new URL('../Accountant.html',import.meta.url),'utf8');
- assert.equal(html.split('id="floorDeductionsCard"').length-1,1);
+ assert.equal(html.split("floorStat.id='floorDeductionsCard'").length-1,1); // Created dynamically by renderStats
  assert.match(html,/إجمالي الأرضيات المخصومة/);
  assert.match(html,/الخصومات الفعلية بعد الاسترجاع والإلغاء/);
  assert.match(html,/fetch\('\/api\/dashboard\/floor-deductions',\{headers:\{Authorization:'Bearer '\+floorToken\}\}\)/);
