@@ -6640,7 +6640,7 @@ window.openOldBalanceTransfer=function(){
    const rows=await rpc('getAccountantWithdrawalData',token());
    box.replaceChildren();
    const tabs=document.createElement('div');tabs.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:12px 0';
-   for(const [key,label] of [['pending','⏳ المعلّقة'],['transferred','✅ تم التحويل'],['kept','📁 إبقاء']]){
+   for(const [key,label] of [['pending','⏳ المعلّقة'],['transferred','✅ تم التحويل'],['kept','📁 إبقاء'],['cancelled','🚫 الملغاة']]){
     const button=document.createElement('button');button.type='button';button.className='btn '+(withdrawalTab===key?'btn-primary':'btn-soft');
     button.textContent=label+' ('+rows.filter(w=>key==='pending'?['pending','approved'].includes(w.status):w.status===key).length+')';
     button.onclick=()=>{withdrawalTab=key;load()};tabs.append(button);
@@ -6659,13 +6659,13 @@ window.openOldBalanceTransfer=function(){
     const meta=document.createElement('div');meta.className='withdraw-request-meta';meta.textContent='📅 الطلب: '+new Date(w.created_at).toLocaleString('ar-JO')+(w.reviewed_at?' • المراجعة: '+new Date(w.reviewed_at).toLocaleString('ar-JO'):'')+(w.note?' • '+w.note:'');div.append(meta);
     if(withdrawalTab==='pending'){
      const actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-top:14px';
-     for(const [status,title] of [['transferred','✅ تم التحويل'],['kept','📁 إبقاء']]){
+     for(const [status,title] of [['transferred','✅ تم التحويل'],['kept','📁 إبقاء'],['cancelled','🚫 إلغاء الطلب']]){
       if(w.status==='approved'&&status==='kept')continue;
       const button=document.createElement('button');button.type='button';button.className='btn '+(status==='transferred'?'btn-primary':'btn-soft');button.textContent=title;
       button.onclick=async()=>{
-       const message=status==='transferred'?'تأكيد التحويل وخصم '+w.amount+' د.أ من رصيد '+w.name+'؟':'تأكيد إبقاء المبلغ في رصيد '+w.name+' وإغلاق الطلب بدون خصم؟';
-       if(!confirm(message))return;button.disabled=true;
-       try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message);button.disabled=false}
+       const message=status==='transferred'?'تأكيد التحويل وخصم '+w.amount+' د.أ من رصيد '+w.name+'؟':status==='cancelled'?'إلغاء طلب السحب #'+w.id+' بدون خصم أي رصيد؟ هذا الإلغاء نهائي.':'تأكيد إبقاء المبلغ في رصيد '+w.name+' وإغلاق الطلب بدون خصم؟';
+       if(!confirm(message))return;actions.querySelectorAll('button').forEach(b=>b.disabled=true);
+       try{await rpc('reviewCaptainWithdrawal',token(),w.id,status,'');await load()}catch(e){alert(e.message);actions.querySelectorAll('button').forEach(b=>b.disabled=false)}
       };actions.append(button);
      }div.append(actions);
     }box.append(div);
