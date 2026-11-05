@@ -62,7 +62,7 @@ async function deleteNorthPolicyReply(payload){
   return {deleted:true};
 }
 function isCommissionLike(value){return /^👍[🏻🏼🏽🏾🏿]?$/.test(String(value||"").replace(/\uFE0F/g,"").trim())}
-function reactionEmoji(md={}){return String(md?.extendedTextMessageData?.text||md?.reactionMessageData?.text||md?.reactionMessageData?.emoji||"").replace(/\uFE0F/g,"").trim()}
+function reactionEmoji(md={}){return String(md?.reactionMessageData?.text??md?.reactionMessageData?.emoji??md?.extendedTextMessageData?.text??"").replace(/\uFE0F/g,"").trim()}
 function deletedId(md={}){return String(md?.deletedMessageData?.stanzaId||md?.deletedMessageData?.idMessage||md?.deletedMessageData?.messageId||"").trim()}
 function publicBase(){return String(process.env.PUBLIC_BASE_URL||process.env.RAILWAY_PUBLIC_DOMAIN||"").replace(/\/$/,"").replace(/^([^h])/,'https://$1')}
 async function getSetting(key,fallback){return await getSystemSetting(key,fallback)}
@@ -2751,6 +2751,24 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
       }catch(e){await setEventStatus(id,"error",e.message);throw e}
     }
     if(!isCommissionLike(emoji)){
+      // A non-👍 reaction can REPLACE an earlier 👍 on the same reply.
+      // Replacement must revoke the old approval, never create a new commission.
+      const previous=await reactionStateBefore(done,sender,eventMsFromPayload(payload),id);
+      if(previous.known&&isCommissionLike(previous.emoji)){
+        if(comparisonMode){
+          const rev=await cancelComparisonReaction(done,{reason:`استبدال 👍 بـ ${emoji}`,eventId:id});
+          await setEventStatus(id,rev?"reversed":"duplicate",rev?`تم إلغاء جرد المقارنة بعد استبدال 👍 بـ ${emoji}`:"الجرد التجريبي ملغى مسبقًا");
+          return {reversed:rev,comparisonOnly:true,kind:"likeReplaced",emoji};
+        }
+        const locked=await activeCancellationLock(done);
+        if(locked){
+          await setEventStatus(id,"duplicate","الجرد ملغى مسبقًا بواسطة 🚫 — لا تغيير مالي");
+          return {duplicate:true,reversed:0,kind:"likeReplaced",emoji};
+        }
+        const rev=await reverseReaction(done,userId,`استبدال 👍 بـ ${emoji}`,{includeLegacy:repairMode,suppressBalanceSync:safeRecovery,outageRecoveryJobId});
+        await setEventStatus(id,rev?"reversed":"ignored",rev?`استبدال 👍 بـ ${emoji} — عكس ${rev} حركة وإرجاع العمولة`:`Reaction ${emoji} لا يحتسب عمولة ولا توجد حركة فعالة لعكسها`);
+        return {reversed:rev,kind:"likeReplaced",emoji};
+      }
       await setEventStatus(id,"ignored",`Reaction ${emoji} ليس إشارة محاسبية — بدون تغيير مالي`);
       return {ignored:true,reason:"non_accounting_reaction",emoji};
     }
