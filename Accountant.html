@@ -2719,6 +2719,16 @@ body{overflow-x:hidden}
     const s=state.stats;
     const cards=[['إجمالي الكباتن',s.totalCaptains,'كل الحسابات',true],['النشطون',s.activeCaptains,'رصيد كافٍ',true],['المجمّدون',s.frozenCaptains,'بحاجة إلى شحن',true],['حوالات معلقة',s.pendingTransfers,'بانتظار المراجعة',true],['حركات واتساب',s.pendingWhatsApp,'بانتظار الاعتماد',true],['إجمالي الأرصدة',money(s.totalBalances),'داخل محافظ الكباتن',false]];
     $('statsCards').innerHTML=cards.map((x,i)=>`<article class="stat" style="animation-delay:${i*55}ms"><span>${x[0]}</span><strong ${x[3]?`data-count="${Number(x[1]||0)}"`:''}>${x[3]?'0':x[1]}</strong><small>${x[2]}</small></article>`).join('');
+    // Actual charged floor entries, net of documented refunds/reversals; dashboard read-only.
+    const floorStat=document.createElement('article');
+    floorStat.className='stat';floorStat.id='floorDeductionsCard';
+    floorStat.innerHTML='<span>🧾 إجمالي الأرضيات المخصومة</span><strong id="floorDeductionsValue">جارٍ الحساب...</strong><small>الخصومات الفعلية بعد الاسترجاع والإلغاء</small>';
+    $('statsCards').appendChild(floorStat);
+    const floorToken=token;
+    fetch('/api/dashboard/floor-deductions',{headers:{Authorization:'Bearer '+floorToken}})
+      .then(async response=>{const data=await response.json();if(!response.ok||!data.ok)throw Error(data.error||'unavailable');return data})
+      .then(data=>{if(token!==floorToken)return;const target=document.getElementById('floorDeductionsValue');if(target)target.textContent=money(data.amount);})
+      .catch(()=>{if(token!==floorToken)return;const target=document.getElementById('floorDeductionsValue');if(target)target.textContent='تعذّر التحميل';});
     window.updateAdminWithdrawalNet?.();
     requestAnimationFrame(animateCounters);
   }
