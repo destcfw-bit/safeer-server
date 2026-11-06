@@ -3,7 +3,7 @@ import { captainWithdrawalData, requestCaptainWithdrawal, accountantWithdrawalDa
 
 import bcrypt from "bcryptjs";
 import * as XLSX from "xlsx";
-import { randomUUID, createHash } from "node:crypto";
+import { randomUUID, createHash, randomBytes } from "node:crypto";
 import {
   db, findUserByUsername, getUserPublic, listCaptains, createCaptain, updateCaptain,
   createCaptainUser, getCaptainProfile, getCaptainSummary, getBalance, listLedger, setCaptainBalanceExact,
@@ -1599,6 +1599,18 @@ export function makeLegacyRpc(app){
         });
         const balanceState=await syncCaptainBalanceState(p.captainId).catch(()=>null);
         return {ok:true,message:"تم تسجيل الحركة",balance:Number(r.balance),transaction:legacyTx(r.entry),groupRestore:balanceState};
+      }
+      case "issueCaptainTemporaryPassword":{
+        const me=await verify(args[0],["admin"]);
+        if(me.delegated)throw new Error("هذه العملية للإدارة الرئيسية فقط");
+        const captainId=String(args[1]||"");
+        const row=await db.query(`SELECT phone FROM captains WHERE id=$1`,[captainId]);
+        if(!row.rowCount)throw new Error("الكابتن غير موجود");
+        const temporaryPassword=randomBytes(12).toString("base64url");
+        await createCaptainUser({captainId,username:row.rows[0].phone,password:temporaryPassword,createdBy:me.sub});
+        await db.query(`UPDATE users SET must_change_password=TRUE,updated_at=NOW() WHERE role='captain' AND captain_id=$1`,[captainId]);
+        await audit(me.sub,"captain.temporary_password_issued","captain",captainId,{method:"one_time_admin_display"});
+        return {ok:true,message:"تم إصدار كلمة مرور مؤقتة ويجب تغييرها عند أول دخول",temporaryPassword};
       }
       case "resetCaptainPassword":{
         const me=await verify(args[0],["admin","accountant"]);
