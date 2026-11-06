@@ -3883,7 +3883,7 @@ function renderCaptains(){
     const q=($('captainSearch')?.value||'').trim().toLowerCase();
     const list=state.captains.filter(c=>!q||`${captainDisplayName(c)} ${c.phone}`.toLowerCase().includes(q));
     if(!list.length){$('captainsTable').innerHTML=empty('لا توجد نتائج');return}
-    $('captainsTable').innerHTML=`<div class="table-wrap"><table class="table"><thead><tr><th>الكابتن</th><th>رقم الهاتف / الدخول</th><th>بيانات التحويل</th><th>الرصيد</th><th>فئة الرصيد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>${list.map(c=>`<tr><td><b>${esc(captainDisplayName(c))}</b><br>${weeklyRoleBadge(c.weeklyRole)} <small>${money(c.weeklyProduction||0)} / ${money(c.weeklyConsumption||0)}</small></td><td>${esc(c.phone)}</td><td>${c.payoutIdentifier?`${esc(payoutMethodLabel(c.payoutMethod))} — ${esc(c.payoutIdentifier)}`:'<span class="payout-missing">غير مكتملة</span>'}</td><td>${money(c.balance)}</td><td>${captainBalanceModeBadge(c.balanceMode)}</td><td>${captainBadge(c.status)}<br><small>${esc(c.statusReason||'')}</small></td><td><div class="mini-actions"><button class="btn btn-soft" onclick="openCaptainStatement('${c.id}')">📄 كشف حساب تفصيلي</button><button class="btn btn-green" onclick="openCaptainFullProfile('${c.id}')">الملف الكامل</button><button class="btn btn-soft" onclick="openCaptainMovementModal('${c.id}')">تعديل الرصيد</button><button class="btn btn-soft" onclick="openPayoutModal('${c.id}')">بيانات التحويل</button><button class="btn btn-soft" onclick="toggleCaptainGroupProtection('${c.id}',${!c.protectFromGroupRemoval})">${c.protectFromGroupRemoval?'🛡️ إلغاء حماية القروب':'🛡️ حماية من الإزالة'}</button><button class="btn btn-soft" onclick="resetPass('${c.id}')">كلمة مرور</button>${c.status==='DISABLED'?`<button class="btn btn-green" onclick="captainState('${c.id}','ENABLE')">تفعيل</button>`:`<button class="btn btn-danger" onclick="captainState('${c.id}','DISABLE')">إيقاف</button>`}</div></td></tr>`).join('')}</tbody></table></div>`;
+    $('captainsTable').innerHTML=`<div class="table-wrap"><table class="table"><thead><tr><th>الكابتن</th><th>رقم الهاتف / الدخول</th><th>بيانات التحويل</th><th>الرصيد</th><th>فئة الرصيد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>${list.map(c=>`<tr><td><b>${esc(captainDisplayName(c))}</b><br>${weeklyRoleBadge(c.weeklyRole)} <small>${money(c.weeklyProduction||0)} / ${money(c.weeklyConsumption||0)}</small></td><td>${esc(c.phone)}</td><td>${c.payoutIdentifier?`${esc(payoutMethodLabel(c.payoutMethod))} — ${esc(c.payoutIdentifier)}`:'<span class="payout-missing">غير مكتملة</span>'}</td><td>${money(c.balance)}</td><td>${captainBalanceModeBadge(c.balanceMode)}</td><td>${captainBadge(c.status)}<br><small>${esc(c.statusReason||'')}</small></td><td><div class="mini-actions"><button class="btn btn-soft" onclick="openCaptainStatement('${c.id}')">📄 كشف حساب تفصيلي</button><button class="btn btn-green" onclick="openCaptainFullProfile('${c.id}')">الملف الكامل</button><button class="btn btn-soft" onclick="openCaptainMovementModal('${c.id}')">تعديل الرصيد</button><button class="btn btn-soft" onclick="openPayoutModal('${c.id}')">بيانات التحويل</button><button class="btn btn-soft" onclick="toggleCaptainGroupProtection('${c.id}',${!c.protectFromGroupRemoval})">${c.protectFromGroupRemoval?'🛡️ إلغاء حماية القروب':'🛡️ حماية من الإزالة'}</button><button class="btn btn-soft" onclick="resetPass('${c.id}')">كلمة مرور</button><button class="btn btn-soft" onclick="issueCaptainTemporaryPassword('${c.id}')">🔐 كلمة مؤقتة</button>${c.status==='DISABLED'?`<button class="btn btn-green" onclick="captainState('${c.id}','ENABLE')">تفعيل</button>`:`<button class="btn btn-danger" onclick="captainState('${c.id}','DISABLE')">إيقاف</button>`}</div></td></tr>`).join('')}</tbody></table></div>`;
   }
 
   function renderUnregisteredAttempts(){
@@ -5626,6 +5626,18 @@ function renderCaptains(){
     }catch(err){toast(err.message,'error')}
   }
 
+  async function issueCaptainTemporaryPassword(id){
+    if(!confirm('إنشاء كلمة مرور مؤقتة جديدة لهذا الكابتن؟ ستتوقف كلمة المرور السابقة، وسيُطلب منه تغيير الجديدة عند أول دخول.'))return;
+    try{
+      const res=await api('issueCaptainTemporaryPassword',token,id);
+      if(!res.ok||!res.temporaryPassword)throw new Error(res.message||'تعذر إصدار كلمة المرور المؤقتة');
+      const secret=String(res.temporaryPassword);
+      // Show only in this response; never save the secret in localStorage or the captain record.
+      prompt('كلمة المرور المؤقتة (تظهر الآن مرة واحدة فقط). انسخها وأرسلها للكابتن بشكل خاص:',secret);
+      toast('تم تعيين كلمة مرور مؤقتة، ويجب تغييرها عند أول دخول','success');
+    }catch(err){toast(err.message||'تعذر إصدار كلمة المرور المؤقتة','error')}
+  }
+
   async function resetPass(id){
     const pass=prompt('أدخل كلمة المرور الجديدة (6 خانات على الأقل):','');if(!pass)return;
     try{const res=await api('resetCaptainPassword',token,id,pass);if(!res.ok)throw new Error(res.message);toast(res.message,'success')}catch(err){toast(err.message,'error')}
@@ -5852,7 +5864,7 @@ function renderCaptains(){
     loadGreenGroups,logoutNow,openCaptainModal,openPasswordModal,openInventoryRecovery,recoverGreenOutageWindowClient,
     openCaptainMovementModal,captainExactBalancePreview,saveCaptainExactBalance,openPayoutModal,openReactionCorrection,openTransferFromDashboard,openTransferImage,prepareFridaySettlements,startFridayGroupClosureClient,refreshFridayGroupSessionClient,forceOpenFridayGroupClient,undoFridayBatch,addUnregisteredCaptain,
     exportCaptainBalancesClient,openCaptainStatement,pollGreenOutageRecoveryStatus,renderCaptains,renderUnregisteredAttempts,renderFridaySettlements,renderInventory,renderTransfers,
-    renderQualityCenter,renderWhatsAppMovements,reprocessIssue,reprocessPreviousMessages,recoverGreenHistory,runLast3DaysGreenAuditClient,reconcilePreviousWeekMixed40Client,repairCancelledInventory,repairWeeklyFloors,resetPass,resolveIssue,reviewTransfer,reviewWaMovement,runSafetyCheck,
+    renderQualityCenter,renderWhatsAppMovements,reprocessIssue,reprocessPreviousMessages,recoverGreenHistory,runLast3DaysGreenAuditClient,reconcilePreviousWeekMixed40Client,repairCancelledInventory,repairWeeklyFloors,resetPass,issueCaptainTemporaryPassword,resolveIssue,reviewTransfer,reviewWaMovement,runSafetyCheck,
     sendGroupGuideMessageNow,sendRechargeWhatsApp,testGreenConnection,toggleMenu,toggleSound,markSettlementPaid,markPreviewSettlementPaid,verifyPaidSettlementBalance,returnSettlementToBalance,returnPreviewSettlementToBalance,undoManualTransaction,undoReactionPair,
     toggleCancellationNumber,removeCancellationNumber,reopenCancellation,toggleCaptainBalanceMode,
     startWhatsappMessageCleanupClient,refreshWhatsappCleanupStatusClient,forceOpenWhatsappCleanupGroupClient,
