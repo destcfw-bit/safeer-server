@@ -1670,7 +1670,7 @@ export function makeLegacyRpc(app){
         const updated=await db.query("UPDATE captains SET protect_from_group_removal=$2,updated_at=NOW() WHERE id=$1 RETURNING id",[captainId,protect]);
         if(!updated.rowCount)throw new Error("الكابتن غير موجود");
         await audit(me.sub,"captain.group_protection","captain",captainId,{protect});
-        return {ok:true,message:protect?"تمت حماية الكابتن من الإزالة التلقائية":"تم إلغاء الحماية اليدوية"};
+        return {ok:true,message:protect?"تمت حماية الكابتن من الإزالة وحذف رسائله تلقائياً":"تم إلغاء حماية القروب والرسائل"};
       }
       case "setCaptainBalanceMode":{
         await verify(args[0],["admin","accountant"]);
