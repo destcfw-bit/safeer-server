@@ -6,11 +6,9 @@ let inboxReady=Promise.resolve(false);
 export function registerPushRoutes(app,{db,requireRoles}){
   const publicKey=process.env.VAPID_PUBLIC_KEY||"";
   const privateKey=process.env.VAPID_PRIVATE_KEY||"";
-  // Temporary kill switch: Safeer push stays OFF until explicitly re-enabled.
-  // Inbox/ledger data and existing subscriptions are retained for later.
-  const ready=process.env.SAFEER_PUSH_ENABLED==="true"&&Boolean(publicKey&&privateKey);
+  const ready=Boolean(publicKey&&privateKey);
   if(ready) webpush.setVapidDetails(process.env.VAPID_SUBJECT||"mailto:admin@dropcodejo.com",publicKey,privateKey);
-  if(!ready) app.log.info({pushEnabled:process.env.SAFEER_PUSH_ENABLED==="true",hasVapidPublicKey:Boolean(publicKey),hasVapidPrivateKey:Boolean(privateKey)},"Safeer Web Push disabled until SAFEER_PUSH_ENABLED=true and VAPID keys are configured");
+  if(!ready) app.log.warn({hasVapidPublicKey:Boolean(publicKey),hasVapidPrivateKey:Boolean(privateKey)},"Safeer Web Push disabled: VAPID keys must be configured in server environment");
 
   // In-app inbox is independent of Web Push subscriptions.
   const inboxInit=db.query(`CREATE TABLE IF NOT EXISTS captain_notification_inbox (
@@ -165,7 +163,7 @@ export async function notifyInventoryMovement(db,{producer,consumer,components,d
         VALUES($1,$2,$3,$4,$5)`,[owner.id,kind,kind==='production'?'🟢 تم إنتاج طلب':'🔴 تم استهلاك طلب',`عمولة ${total.toFixed(2)} د.أ • ${other?.name||'كابتن'}`,'/captain']);
     }
   } catch(e){console.warn('Notification inbox write skipped:',e.message)}
-  if(process.env.SAFEER_PUSH_ENABLED!=="true"||!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY)return;
+  if(!process.env.VAPID_PUBLIC_KEY||!process.env.VAPID_PRIVATE_KEY)return;
   const ids=[...new Set([producer?.id,consumer?.id].filter(Boolean).map(String))];
   if(!ids.length)return;
   const amount=(components||[]).reduce((sum,c)=>sum+Number(c.quantity||0)*(c.type==='ORDER'?1:0.75),0);
