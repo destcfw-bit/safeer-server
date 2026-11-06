@@ -8,6 +8,7 @@ export function registerPushRoutes(app,{db,requireRoles}){
   const privateKey=process.env.VAPID_PRIVATE_KEY||"";
   const ready=Boolean(publicKey&&privateKey);
   if(ready) webpush.setVapidDetails(process.env.VAPID_SUBJECT||"mailto:admin@dropcodejo.com",publicKey,privateKey);
+  if(!ready) app.log.warn({hasVapidPublicKey:Boolean(publicKey),hasVapidPrivateKey:Boolean(privateKey)},"Safeer Web Push disabled: VAPID keys must be configured in server environment");
 
   // In-app inbox is independent of Web Push subscriptions.
   const inboxInit=db.query(`CREATE TABLE IF NOT EXISTS captain_notification_inbox (
