@@ -2245,7 +2245,7 @@ body{overflow-x:hidden}
 </div></section>
 <section id="view-weekly-participants" class="view" dir="rtl"><div id="weeklyParticipantsPanel" class="panel" style="display:block;width:100%;max-width:none;max-height:none;overflow:visible;padding:20px">
   <div style="display:flex;justify-content:space-between;align-items:center"><strong>📊 المتفاعلون على الطلبات</strong><button id="weeklyParticipantsClose" type="button" class="btn btn-soft">العودة للرئيسية</button></div>
-  <p id="weeklyParticipantsSummary">جارٍ تحميل التقرير...</p>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0"><label for="weeklyParticipantsWeek" style="font-weight:700">📅 اختر الأسبوع</label><input id="weeklyParticipantsWeek" type="date" class="input" style="width:auto;max-width:210px"><button id="weeklyParticipantsPrevious" type="button" class="btn btn-soft">⬅️ الأسبوع السابق</button><button id="weeklyParticipantsCurrent" type="button" class="btn btn-soft">الأسبوع الحالي</button></div><p id="weeklyParticipantsSummary">جارٍ تحميل التقرير...</p>
   <div id="weeklyParticipantsRows"></div>
   <button id="weeklyParticipantsRefresh" type="button">🔄 تحديث</button>
 </div></section>
@@ -6695,15 +6695,21 @@ async function load(){
  const summary=byId('weeklyParticipantsSummary'), list=byId('weeklyParticipantsRows');
  summary.textContent='جارٍ تحميل التقرير...';list.replaceChildren();
  try{
-  const response=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:'getWeeklyParticipantsReport',args:[token()]})});
+  const response=await fetch('/legacy-rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:'getWeeklyParticipantsReport',args:[token(),byId('weeklyParticipantsWeek').value]})});
   const data=await response.json();
   if(!response.ok||data.__rpcError||data.__error)throw Error(data.message||data.error||'فشل التقرير');
-  summary.textContent='الأسبوع: '+data.start+' إلى '+data.end+' | عدد الكباتن: '+data.count+' | الأرضية التقديرية: '+data.estimatedTotal+' د.أ (للكابتن '+data.floor+' د.أ)';
-  for(const c of data.captains){const div=document.createElement('div');div.style.cssText='padding:8px 0;border-bottom:1px solid #ffffff33';div.textContent=c.name+' — '+c.phone+' — '+c.interactions+' طلب/تفاعل';list.appendChild(div)}
+  summary.textContent='الأسبوع: '+data.start+' إلى '+data.end+' (بداية الجمعة القادمة) | الكباتن المتفاعلون: '+data.count+' | الكباتن المخصوم منهم: '+data.chargedCaptains+' | إجمالي الأرضية الفعلية: '+Number(data.actualTotal||0).toFixed(3)+' د.أ (بعد الاسترجاعات)';
+  for(const c of data.captains){const div=document.createElement('div');div.style.cssText='padding:8px 0;border-bottom:1px solid #ffffff33';div.textContent=c.name+' — '+c.phone+' — '+c.interactions+' طلب/تفاعل — الأرضية المخصومة فعليًا: '+Number(c.actualFloor||0).toFixed(3)+' د.أ';list.appendChild(div)}
   if(!data.captains.length)list.textContent='لا توجد حركات محاسبية لهذا الأسبوع';
  }catch(e){summary.textContent='تعذر تحميل التقرير: '+e.message}
 }
 
+const weekInput=byId('weeklyParticipantsWeek');
+const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Amman',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+weekInput.value=today;weekInput.max=today;
+weekInput.onchange=load;
+byId('weeklyParticipantsPrevious').onclick=()=>{const d=new Date((weekInput.value||today)+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-7);weekInput.value=d.toISOString().slice(0,10);load()};
+byId('weeklyParticipantsCurrent').onclick=()=>{weekInput.value=today;load()};
 byId('weeklyParticipantsClose').onclick=()=>goToView('dashboard');
 byId('weeklyParticipantsRefresh').onclick=load;
 })();
