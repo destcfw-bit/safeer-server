@@ -2661,6 +2661,9 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
     }
   }
   const captain=await findCaptainByPhone(sender);
+  // Manual group protection also protects this captain's messages from auto-deletion;
+  // blocked replies must still remain ineligible for commissions.
+  const captainMessageProtected=Boolean(captain?.protect_from_group_removal);
   // Authorized accountant/admin accounts may not have a captain wallet.
   // Allow only 🚫 and numbered corrections to proceed without one.
   const adminReaction=type==="reactionMessage"&&(
@@ -2900,6 +2903,10 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
       await db.query(`UPDATE whatsapp_events SET raw_payload=COALESCE(raw_payload,'{}'::jsonb)||jsonb_build_object('_abshirReplyBalanceBlocked',$2::jsonb) WHERE id_message=$1`,[id,JSON.stringify(policy)]);
       await setEventStatus(id,'blocked',`شمال: ${policy.reason}; الرصيد ${policy.balance}; العمولة ${policy.commission}`);
       if(safeRecovery||payload._abshirHistoryRecovery)return {blocked:true,...policy,deleted:false,warningSent:false,safeRecovery:true};
+      if(captainMessageProtected){
+        await setEventStatus(id,'blocked','رد محمي من الحذف بواسطة الإدارة — لا تُحسب عمولة مع الرصيد غير الكافي');
+        return {blocked:true,...policy,deleted:false,warningSent:false,protectedFromDeletion:true,replyOnly:true};
+      }
       const deletion=policy.deleted?{deleted:true}:payload._abshirProvider==='DROPCODE_CONNECT'
         ?await deleteNorthPolicyReply(payload)
         :await greenDeletePolicyMessage(group,id,{reason:policy.reason,captainId:captain.id,balance:policy.balance});
@@ -2927,6 +2934,10 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
   const disabled=captainStatus==="disabled";
   if(!comparisonMode&&!repairMode&&(lowBalanceReply||disabled)){
     const reason=disabled?"account_disabled":"low_balance_reply";
+    if(captainMessageProtected){
+      await setEventStatus(id,'blocked','رسالة محمية من الحذف بواسطة الإدارة — دون احتساب عمولة');
+      return {blocked:true,reason,balance:n(captain.balance),replyOnly:!disabled,deleted:false,protectedFromDeletion:true,warningSent:false,removedFromGroup:false};
+    }
     if(safeRecovery){
       const note=disabled
         ?"استرجاع فترة انقطاع: الحساب معطل — تم منع الحركة بدون حذف رسالة قديمة"
