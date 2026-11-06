@@ -1464,6 +1464,7 @@ body{overflow-x:hidden}
         <div class="nav-section-label">الإدارة اليومية</div>
         <button class="active" data-view="dashboard" onclick="switchView('dashboard',this)"><span>⌂</span> الرئيسية</button>
         <button data-view="captains" onclick="switchView('captains',this)"><span>♟</span> الكباتن</button>
+        <button data-view="captainDebts" onclick="switchView('captainDebts',this)"><span>📉</span> أرصدة الكباتن (سالب / صفر)</button>
         <button type="button" id="exportBalancesSidebarBtn" onclick="exportCaptainBalancesClient()" title="تنزيل ملف أرقام وأرصدة جميع الكباتن"><span>⬇️</span> تصدير الأرقام والأرصدة</button>
         <details class="nav-group">
           <summary><span>📁</span> نقل الأرصدة</summary>
@@ -1695,6 +1696,17 @@ body{overflow-x:hidden}
         <div class="panel">
           <div class="panel-head"><div><h3>دليل الكباتن</h3><p>الحسابات ينشئها المحاسب فقط</p></div><input id="captainSearch" class="input search" placeholder="بحث بالاسم أو الرقم..." oninput="renderCaptains()"></div>
           <div id="captainsTable"></div>
+        </div>
+      </section>
+
+      <section id="view-captainDebts" class="view">
+        <div class="panel">
+          <div class="panel-head"><div><h3>📉 أرصدة الكباتن</h3><p>عرض الأرصدة السالبة والصفرية حسب الرصيد الحالي المسجل</p></div>
+          <button class="btn btn-soft" onclick="loadData(true)">🔄 تحديث</button></div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
+            <select id="captainDebtFilter" class="input" onchange="renderCaptainDebts()" aria-label="تصفية الأرصدة"><option value="negative">🔴 عليهم رصيد سالب</option><option value="zero">⚪ رصيدهم صفر</option><option value="all">الكل (سالب وصفر)</option></select>
+            <input id="captainDebtSearch" class="input" placeholder="بحث باسم الكابتن أو رقمه" oninput="renderCaptainDebts()">
+          </div><div id="captainDebtStats"></div><div id="captainDebtTable"></div>
         </div>
       </section>
 
@@ -2685,6 +2697,7 @@ body{overflow-x:hidden}
         case 'dashboard':renderStats();renderDashboard();renderSmartAlerts();renderCleanStartControl();break;
         case 'clean-start':renderCleanStartControl();break;
         case 'captains':renderCaptains();break;
+        case 'captainDebts':renderCaptainDebts();break;
         case 'unregistered':renderUnregisteredAttempts();break;
         case 'movements':renderCleanStartControl();renderMovementOptions();movementPreview('CONSUMPTION');movementPreview('PRODUCTION');renderManualExcelPreview();break;
         case 'transfers':renderTransfers();break;
@@ -3841,6 +3854,31 @@ async function openCaptainStatement(id){
     renderCaptainStatementDocument(win,data);
   }catch(error){win.close();alert('تعذر استخراج الكشف: '+error.message)}
 }
+function sendCaptainDebtWhatsApp(id){
+ const c=(state.captains||[]).find(x=>String(x.id)===String(id));
+ if(!c||Number(c.balance)>=0){alert('لا يوجد رصيد سالب لهذا الكابتن');return}
+ let phone=String(c.phone||'').replace(/\D/g,'');
+ if(phone.startsWith('00'))phone=phone.slice(2);
+ if(phone.startsWith('0'))phone='962'+phone.slice(1);
+ else if(phone.length===9&&phone.startsWith('7'))phone='962'+phone;
+ if(!/^9627\d{8}$/.test(phone)){alert('رقم الكابتن غير صالح لواتساب');return}
+ const amount=Math.abs(Number(c.balance)).toFixed(3);
+ const message=['مرحباً كابتن '+captainDisplayName(c)+' 🌷','','نود تذكيرك بأن عليك رصيداً مستحقاً لنظام السفير بقيمة *'+amount+' دينار أردني*.','يرجى تسديد المبلغ المستحق وإرسال إثبات الدفع للإدارة.','','إذا كنت قد سددت مسبقاً، يرجى إرسال إثبات التحويل لمراجعة حسابك.','','شكراً لتعاونك 🙏','إدارة السفير'].join('\n');
+ const edited=prompt('راجع رسالة المطالبة وعدّلها قبل فتح واتساب:',message);
+ if(edited===null||!edited.trim())return;
+ if(!confirm('فتح محادثة الكابتن على واتساب بالرسالة التي راجعتها؟'))return;
+ window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(edited),'_blank','noopener,noreferrer');
+}
+function renderCaptainDebts(){
+    const box=$('captainDebtTable');if(!box)return;
+    const all=(state.captains||[]).filter(c=>Number.isFinite(Number(c.balance)));
+    const negatives=all.filter(c=>Number(c.balance)<-0.0005),zeros=all.filter(c=>Math.abs(Number(c.balance))<=0.0005);
+    const filter=$('captainDebtFilter')?.value||'negative',q=($('captainDebtSearch')?.value||'').trim().toLowerCase();
+    const list=(filter==='negative'?negatives:filter==='zero'?zeros:[...negatives,...zeros]).filter(c=>!q||(String(captainDisplayName(c))+' '+String(c.phone||'')).toLowerCase().includes(q));
+    $('captainDebtStats').textContent='🔴 سالب: '+negatives.length+' كابتن | ⚪ صفر: '+zeros.length+' كابتن | إجمالي السالب: '+money(negatives.reduce((sum,c)=>sum+Number(c.balance),0));
+    if(!list.length){box.innerHTML=empty('لا يوجد كباتن بهذه الفئة');return}
+    box.innerHTML='<div class="table-wrap"><table class="table"><thead><tr><th>الكابتن</th><th>الهاتف</th><th>الرصيد الحالي</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>'+list.map(c=>'<tr><td><b>'+esc(captainDisplayName(c))+'</b></td><td>'+esc(c.phone||'')+'</td><td><b>'+money(c.balance)+'</b></td><td>'+captainBadge(c.status)+'</td><td><div class="mini-actions"><button class="btn btn-soft" onclick="openCaptainMovementModal(\''+c.id+'\')">✏️ تعديل الرصيد</button><button class="btn btn-green" onclick="openCaptainFullProfile(\''+c.id+'\')">الملف الكامل</button><button class="btn btn-soft" onclick="openCaptainStatement(\''+c.id+'\')">كشف حساب</button><button class="btn btn-green" onclick="sendCaptainDebtWhatsApp(\''+c.id+'\')">💬 مطالبة واتساب</button></div></td></tr>').join('')+'</tbody></table></div>';
+  }
 function renderCaptains(){
     const q=($('captainSearch')?.value||'').trim().toLowerCase();
     const list=state.captains.filter(c=>!q||`${captainDisplayName(c)} ${c.phone}`.toLowerCase().includes(q));
@@ -5679,7 +5717,7 @@ function renderCaptains(){
     document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
     if(btn)btn.classList.add('active');
     btn?.closest('details')?.setAttribute('open','');
-    const titles={'push-broadcast':['إرسال الإشعارات','إرسال إشعار لجميع الكباتن المشتركين أو كباتن محددين'],'weekly-participants':['المتفاعلون والأرضية','تقرير الكباتن الفريدين والأرضية الأسبوعية'],'captain-withdrawals':['طلبات سحب الرصيد','مراجعة طلبات السحب وتصنيف الكباتن'],dashboard:['الرئيسية','ملخص حالة النظام اليوم'],captains:['الكباتن','إدارة الحسابات والأرصدة'],unregistered:['أرقام غير مسجلة','رسائل حُذفت من القروب لأن أصحابها غير موجودين بالنظام'],movements:['إدخال الجرد اليدوي','إنتاج أو استهلاك وإضافة ملف Excel للدورة الحالية'],transfers:['الحوالات','مراجعة طلبات الشحن'],settlements:['تحويلات الجمعة','المستحقات الأسبوعية والتحويلات السابقة'],codes:['أكواد الشحن','الأكواد الصادرة وحالتها'],inventory:['الجرد والحركات','ملخص لحظي للإنتاج والاستهلاك والأرصدة'],'comparison-monitor':['مقارنة اليدوي والآلي','تشغيل آمن من نفس الرقم والقروب بدون تغيير الأرصدة'],reconciliation:['مقارنة الجرد اليدوي','تسوية فرق الجرد بين اليدوي والنظام'],whatsapp:['جرد واتساب','مراجعة النصوص والتسجيلات الصوتية واعتمادها'],'live-whatsapp':['مباشر القروب','مشاهدة ما يحدث في قروب واتساب لحظة بلحظة'],quality:['مركز الأخطاء','المراجعة والتصحيح والفحص اليومي وسجل التدقيق'],'system-health':['مراقبة النظام','PostgreSQL و Redis والطابور وآخر المزامنة'],storage:['إدارة التخزين','تنظيف الصور وبيانات واتساب والأرشيف القديم بأمان'],'reliability':['الاعتمادية والتشخيص','DLQ و Replay و Shadow Mode ومنع التكرار'],'migration':['مطابقة Google / PostgreSQL','مقارنة الكباتن والأرصدة والحركات قبل التحويل'],'full-migration':['نقل بيانات App Script','رفع وتطبيق بيانات Google على PostgreSQL بأمان'],'staff-users':['المستخدمون والصلاحيات','إدارة الأدمن والمحاسبين والصلاحيات'],'green-settings':['واتساب والقروب','الربط والاسترجاع والرسائل وصلاحيات الإلغاء'],transactions:['سجل الحركات','حركات الشحن والجرد في الدورة الحالية'],maintenance:['صيانة موقع الكباتن','إغلاق موقع الكباتن وتحديد نسبة إنجاز الصيانة']};
+    const titles={'push-broadcast':['إرسال الإشعارات','إرسال إشعار لجميع الكباتن المشتركين أو كباتن محددين'],'weekly-participants':['المتفاعلون والأرضية','تقرير الكباتن الفريدين والأرضية الأسبوعية'],'captain-withdrawals':['طلبات سحب الرصيد','مراجعة طلبات السحب وتصنيف الكباتن'],dashboard:['الرئيسية','ملخص حالة النظام اليوم'],captains:['الكباتن','إدارة الحسابات والأرصدة'],captainDebts:['أرصدة الكباتن (سالب / صفر)','عرض الأرصدة الحالية السالبة والصفرية'],unregistered:['أرقام غير مسجلة','رسائل حُذفت من القروب لأن أصحابها غير موجودين بالنظام'],movements:['إدخال الجرد اليدوي','إنتاج أو استهلاك وإضافة ملف Excel للدورة الحالية'],transfers:['الحوالات','مراجعة طلبات الشحن'],settlements:['تحويلات الجمعة','المستحقات الأسبوعية والتحويلات السابقة'],codes:['أكواد الشحن','الأكواد الصادرة وحالتها'],inventory:['الجرد والحركات','ملخص لحظي للإنتاج والاستهلاك والأرصدة'],'comparison-monitor':['مقارنة اليدوي والآلي','تشغيل آمن من نفس الرقم والقروب بدون تغيير الأرصدة'],reconciliation:['مقارنة الجرد اليدوي','تسوية فرق الجرد بين اليدوي والنظام'],whatsapp:['جرد واتساب','مراجعة النصوص والتسجيلات الصوتية واعتمادها'],'live-whatsapp':['مباشر القروب','مشاهدة ما يحدث في قروب واتساب لحظة بلحظة'],quality:['مركز الأخطاء','المراجعة والتصحيح والفحص اليومي وسجل التدقيق'],'system-health':['مراقبة النظام','PostgreSQL و Redis والطابور وآخر المزامنة'],storage:['إدارة التخزين','تنظيف الصور وبيانات واتساب والأرشيف القديم بأمان'],'reliability':['الاعتمادية والتشخيص','DLQ و Replay و Shadow Mode ومنع التكرار'],'migration':['مطابقة Google / PostgreSQL','مقارنة الكباتن والأرصدة والحركات قبل التحويل'],'full-migration':['نقل بيانات App Script','رفع وتطبيق بيانات Google على PostgreSQL بأمان'],'staff-users':['المستخدمون والصلاحيات','إدارة الأدمن والمحاسبين والصلاحيات'],'green-settings':['واتساب والقروب','الربط والاسترجاع والرسائل وصلاحيات الإلغاء'],transactions:['سجل الحركات','حركات الشحن والجرد في الدورة الحالية'],maintenance:['صيانة موقع الكباتن','إغلاق موقع الكباتن وتحديد نسبة إنجاز الصيانة']};
     titles.quality=['مركز الأخطاء','المراجعة والتصحيح للحركات الجديدة'];
     titles['captain-admin-access']=['تفويض الإدارة للكباتن','تحديد صلاحيات كل رقم على حدة'];
     $('pageTitle').textContent=(titles[name]||[name,''])[0];
