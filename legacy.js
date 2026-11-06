@@ -1260,7 +1260,7 @@ export function makeLegacyRpc(app){
       }
     }
     switch(method){
-      case "getWeeklyParticipantsReport": { await verify(args[0],["admin","accountant"]); return weeklyParticipantsReport(); }
+      case "getWeeklyParticipantsReport": { await verify(args[0],["admin","accountant"]); return weeklyParticipantsReport(args[1]); }
       case "getCaptainWithdrawalData": { const me=await verify(args[0],["captain"]); return captainWithdrawalData(me.captainId); }
       case "requestCaptainWithdrawal": { const me=await verify(args[0],["captain"]); return requestCaptainWithdrawal(me.captainId,args[1]); }
       case "markWithdrawalAnnouncementSeen": { const me=await verify(args[0],["captain"]); return markWithdrawalAnnouncementSeen(me.captainId); }
