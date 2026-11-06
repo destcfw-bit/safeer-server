@@ -2593,7 +2593,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
     }
     const prior=await db.query("SELECT status FROM whatsapp_events WHERE id_message=$1 LIMIT 1",[id]);
     if(prior.rows[0]?.status==="processed")return {duplicate:true,reason:"recharge_help_sent"};
-    const help="💳 *شحن رصيد أبشر*\n\n🏦 التحويل: كليك — بنك الاتحاد\n🔑 معرّف كليك: *Ebsher74*\n📸 أرسل صورة فاتورة التحويل على واتساب: *0796229162*\n\n⚠️ يتم تأكيد الشحن بعد مراجعة الفاتورة.";
+    const help="💳 *شحن رصيد السفير*\n\n🏦 التحويل: كليك — بنك الاتحاد\n📱 رقم التحويل: *0796497517*\n👤 اسم المستفيد: *عطا الله طيطي*\n\n📸 أرسل صورة فاتورة التحويل على واتساب:\n*0796497517*\n\n⚠️ يتم تأكيد الشحن بعد مراجعة الفاتورة.";
     try{
       if(payload._abshirProvider==="DROPCODE_CONNECT"){
         // WAHA-compatible group mentions: the provider expands "all" to members.
