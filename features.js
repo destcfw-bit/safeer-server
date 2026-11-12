@@ -2265,23 +2265,45 @@ async function historicalDoneIdsForTarget(target){
 }
 
 async function reactionStateBefore(doneId,producerPhone,cutoffMs,excludeEventId=''){
+  // Look up the actual reaction history, including WAHA's serialized message IDs.
+  // A delayed removal must not miss the original 👍 because of its transport ID shape.
+  const canonical=canonicalWhatsappMessageId(doneId);
   const q=await db.query(`
-    SELECT id_message,sender_id,raw_payload,event_timestamp,webhook_received_at
+    SELECT id_message,sender_id,raw_payload,event_timestamp,webhook_received_at,
+      COALESCE(
+        raw_payload->'messageData'->'reactionMessageData'->>'stanzaId',
+        raw_payload->'messageData'->'reactionMessageData'->>'quotedStanzaId',
+        raw_payload->'messageData'->'reactionMessageData'->>'idMessageQuoted'
+      ) AS reaction_target
     FROM whatsapp_events
     WHERE COALESCE(
       raw_payload->'messageData'->'reactionMessageData'->>'stanzaId',
       raw_payload->'messageData'->'reactionMessageData'->>'quotedStanzaId',
-      raw_payload->'messageData'->'reactionMessageData'->>'idMessageQuoted',
-      raw_payload->'messageData'->'extendedTextMessageData'->>'stanzaId'
-    )=$1
+      raw_payload->'messageData'->'reactionMessageData'->>'idMessageQuoted'
+    ) IS NOT NULL
+      AND (
+        COALESCE(
+          raw_payload->'messageData'->'reactionMessageData'->>'stanzaId',
+          raw_payload->'messageData'->'reactionMessageData'->>'quotedStanzaId',
+          raw_payload->'messageData'->'reactionMessageData'->>'idMessageQuoted'
+        )=$1 OR
+        ($3<>'' AND POSITION($3 IN COALESCE(
+          raw_payload->'messageData'->'reactionMessageData'->>'stanzaId',
+          raw_payload->'messageData'->'reactionMessageData'->>'quotedStanzaId',
+          raw_payload->'messageData'->'reactionMessageData'->>'idMessageQuoted',''
+        ))>0)
+      )
       AND ($2='' OR id_message<>$2)
-    ORDER BY webhook_received_at ASC LIMIT 200
-  `,[String(doneId),String(excludeEventId||'')]);
+    ORDER BY webhook_received_at DESC LIMIT 2000
+  `,[String(doneId),String(excludeEventId||''),canonical]);
   const rows=q.rows.map(x=>{
     const raw=Number(x.event_timestamp||x.raw_payload?.timestamp||0);
     const ms=raw>0?(raw>1e11?raw:raw*1000):new Date(x.webhook_received_at||0).getTime();
     return {...x,_ms:Number.isFinite(ms)?ms:0,_emoji:reactionEmoji(x.raw_payload?.messageData||{})};
-  }).filter(x=>normPhone(x.sender_id)===normPhone(producerPhone)&&(!cutoffMs||!x._ms||x._ms<=cutoffMs+5000));
+  }).filter(x=>String(x.raw_payload?.messageData?.typeMessage||'')==='reactionMessage'
+    && sameWhatsappMessageId(x.reaction_target,doneId)
+    && normPhone(x.sender_id)===normPhone(producerPhone)
+    && (!cutoffMs||!x._ms||x._ms<=cutoffMs+5000));
   rows.sort((a,b)=>a._ms-b._ms);
   if(!rows.length)return {known:false,active:false};
   const last=rows[rows.length-1];
