@@ -1606,7 +1606,7 @@ async function cancellationAuthorized(phone){
     grant=await db.query(`SELECT c.name,c.phone FROM captain_admin_grants g
       JOIN captains c ON c.id=g.captain_id
       JOIN users u ON u.captain_id=c.id AND u.role='captain' AND u.is_active=TRUE
-      WHERE g.active=TRUE AND jsonb_array_length(g.permissions)>0
+      WHERE g.active=TRUE AND g.permissions ? 'inventory'
       AND (RIGHT(regexp_replace(c.phone,'[^0-9]','','g'),9)=$1
            OR RIGHT(regexp_replace(u.username,'[^0-9]','','g'),9)=$1)
       LIMIT 1`,[digits]);
@@ -2264,6 +2264,33 @@ async function historicalDoneIdsForTarget(target){
   return out;
 }
 
+// The event log may have been pruned while the financial ledger is still active.
+ // Require the SAME producer's registered phone and an unreversed original approval.
+ // Do not infer an approval from someone else's reaction or from an old reversed entry.
+async function hasActiveProducerLikeLedger(doneId,producerPhone){
+  const exact=String(doneId||'').trim();
+  const canonical=canonicalWhatsappMessageId(exact);
+  const phone=normPhone(producerPhone);
+  if(!exact||!/^7[789][0-9]{7}$/.test(phone))return false;
+  const q=await db.query(`
+    SELECT 1
+      FROM ledger_entries le
+      JOIN captains c ON c.id=le.captain_id
+     WHERE le.reference_type='green_reaction'
+       AND le.entry_type='PRODUCTION'
+       AND le.reversed_at IS NULL
+       AND le.metadata->>'pairRole'='producer'
+       AND (
+         le.metadata->>'doneMessageId'=$1
+         OR le.metadata->>'canonicalDoneMessageId'=$2
+         OR ($2<>'' AND POSITION($2 IN COALESCE(le.metadata->>'doneMessageId',''))>0)
+       )
+       AND RIGHT(regexp_replace(c.phone,'[^0-9]','','g'),9)=$3
+     LIMIT 1
+  `,[exact,canonical,phone]);
+  return q.rowCount>0;
+}
+
 async function reactionStateBefore(doneId,producerPhone,cutoffMs,excludeEventId=''){
   // Look up the actual reaction history, including WAHA's serialized message IDs.
   // A delayed removal must not miss the original 👍 because of its transport ID shape.
@@ -2741,7 +2768,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
       // accidentally cancelling the whole job. Excluding the current event also makes
       // replay/recovery idempotent.
       const previous=await reactionStateBefore(done,sender,eventMsFromPayload(payload),id);
-      if(previous.known&&isCommissionLike(previous.emoji)){
+      if((previous.known&&isCommissionLike(previous.emoji))||(!previous.known&&await hasActiveProducerLikeLedger(done,sender))){
         if(comparisonMode){const locked=await comparisonCancellationLock(done);if(locked){await setEventStatus(id,'duplicate','الجرد التجريبي مقفل مسبقًا');return {duplicate:true,comparisonOnly:true}}const rev=await cancelComparisonReaction(done,{reason:'إزالة 👍',eventId:id});await setEventStatus(id,rev?'reversed':'duplicate',rev?'تم إلغاء الجرد التجريبي بعد إزالة 👍':'ملغي مسبقًا');return {reversed:rev,likeRemoved:true,comparisonOnly:true}}
         const locked=await activeCancellationLock(done);
         if(locked){
@@ -2775,7 +2802,7 @@ export async function processGreenEvent(payload,{force=false,userId=null,repairM
       // A non-👍 reaction can REPLACE an earlier 👍 on the same reply.
       // Replacement must revoke the old approval, never create a new commission.
       const previous=await reactionStateBefore(done,sender,eventMsFromPayload(payload),id);
-      if(previous.known&&isCommissionLike(previous.emoji)){
+      if((previous.known&&isCommissionLike(previous.emoji))||(!previous.known&&await hasActiveProducerLikeLedger(done,sender))){
         if(comparisonMode){
           const rev=await cancelComparisonReaction(done,{reason:`استبدال 👍 بـ ${emoji}`,eventId:id});
           await setEventStatus(id,rev?"reversed":"duplicate",rev?`تم إلغاء جرد المقارنة بعد استبدال 👍 بـ ${emoji}`:"الجرد التجريبي ملغى مسبقًا");
