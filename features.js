@@ -3177,8 +3177,18 @@ export async function applyThursdayFixedDeduction(now=new Date(),createdBy=null)
     const startAt=new Date(Math.max(weekStartAt.getTime(),Number.isFinite(resetAt.getTime())?resetAt.getTime():weekStartAt.getTime())).toISOString();
     const endExclusive=new Date(new Date(`${end}T00:00:00+03:00`).getTime()+24*60*60*1000).toISOString();
 
-    // SAFEER: all enabled captains, even without activity this week.
-    const caps=await db.query(`SELECT c.id,c.name FROM captains c WHERE c.status<>'disabled'`);
+    // SAFEER: charge only captains with actual non-reversed inventory this week.
+    const caps=await db.query(`
+      SELECT c.id,c.name FROM captains c
+      WHERE c.status<>'disabled' AND EXISTS (
+        SELECT 1 FROM ledger_entries le
+        WHERE le.captain_id=c.id AND le.reversed_at IS NULL
+          AND le.entry_type IN ('PRODUCTION','CONSUMPTION')
+          AND le.amount<>0
+          AND le.created_at >= $1::timestamptz
+          AND le.created_at < $2::timestamptz
+      )
+    `,[startAt,endExclusive]);
 
     let applied=0,duplicates=0,duplicateRepairs=0,failed=0;const errors=[];
     for(const c of caps.rows){
