@@ -277,7 +277,7 @@ app.post("/integration/abshir-manual/waha/scan", async (request, reply) => {
 // Safeer operational diagnostics: bounded, redacted in-memory application errors.
 const operationalFaults=[];
 function recordOperationalFault(source,error){
-  const item={time:new Date().toISOString(),source:String(source).slice(0,80),message:String(error?.message||error||"unknown").replace(/(token|secret|password|authorization)\\s*[:=]\\s*[^\\s,]+/gi,"$1=[redacted]").slice(0,350)};
+  const item={time:new Date().toISOString(),source:String(source).slice(0,80),message:String(error?.message||error||"unknown").replace(/(token|secret|password|authorization)\s*[:=]\s*[^\s,]+/gi,"$1=[redacted]").slice(0,350)};
   operationalFaults.unshift(item);if(operationalFaults.length>100)operationalFaults.length=100;
 }
 app.addHook("onError",async(request,reply,error)=>{recordOperationalFault(request.routeOptions?.url||request.url,error)});
