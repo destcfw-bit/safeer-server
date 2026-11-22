@@ -274,24 +274,6 @@ app.post("/integration/abshir-manual/waha/scan", async (request, reply) => {
 });
 
 
-// Safeer operational diagnostics: bounded, redacted in-memory application errors.
-const operationalFaults=[];
-function recordOperationalFault(source,error){
-  const item={time:new Date().toISOString(),source:String(source).slice(0,80),message:String(error?.message||error||"unknown").replace(/(token|secret|password|authorization)\s*[:=]\s*[^\s,]+/gi,"$1=[redacted]").slice(0,350)};
-  operationalFaults.unshift(item);if(operationalFaults.length>100)operationalFaults.length=100;
-}
-app.addHook("onError",async(request,reply,error)=>{recordOperationalFault(request.routeOptions?.url||request.url,error)});
-app.get("/admin/operational-diagnostics",{preHandler:[requireRoles("admin","accountant")]},async(request,reply)=>{
-  const result={ok:true,time:new Date().toISOString(),startupStage,systemReady,redisReady,workerStarted,accountingMode:null,liveQueue:null,repairQueue:null,faults:operationalFaults.slice(0,50),warnings:[]};
-  if(!redisReady)result.warnings.push("Redis غير متصل أو لم يجهز بعد");
-  if(!workerStarted)result.warnings.push("عامل معالجة الجرد غير شغال");
-  if(startupError)result.warnings.push("خطأ بدء التشغيل: "+String(startupError).slice(0,200));
-  try{result.accountingMode=await getAccountingMode();if(result.accountingMode!=="live")result.warnings.push("وضع المحاسبة ليس LIVE: "+result.accountingMode)}catch(e){recordOperationalFault("accountingMode",e);result.warnings.push("تعذر قراءة وضع المحاسبة")}
-  try{result.liveQueue=await whatsappQueue.getJobCounts("waiting","active","completed","failed","delayed");if(result.liveQueue.failed)result.warnings.push("توجد أحداث جرد فاشلة: "+result.liveQueue.failed)}catch(e){recordOperationalFault("liveQueue",e);result.warnings.push("تعذر قراءة طابور الجرد")}
-  try{result.repairQueue=await repairQueue.getJobCounts("waiting","active","completed","failed","delayed")}catch(e){recordOperationalFault("repairQueue",e)}
-  return reply.header("Cache-Control","no-store").send(result);
-});
-
 app.get("/stats", {preHandler:[requireRoles("admin","accountant")]}, async () => ({
   ok:true,
   db:await getStats(),
