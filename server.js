@@ -277,7 +277,8 @@ app.post("/integration/abshir-manual/waha/scan", async (request, reply) => {
 app.get("/stats", {preHandler:[requireRoles("admin","accountant")]}, async () => ({
   ok:true,
   db:await getStats(),
-  queue:await whatsappQueue.getJobCounts("waiting","active","completed","failed","delayed"),
+  queue:await whatsappQueue.getJobCounts("waiting","active","completed","failed","delayed","prioritized","paused"),
+  queuePaused:await whatsappQueue.isPaused(),
   repairQueue:await repairQueue.getJobCounts("waiting","active","completed","failed","delayed"),
   accountingMode:await getAccountingMode(),
   cleanStart:await getCleanStartState(),
