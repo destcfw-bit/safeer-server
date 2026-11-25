@@ -1,5 +1,5 @@
 import IORedis from "ioredis";
-import { Queue, Worker } from "bullmq";
+import { Queue, Worker, DelayedError } from "bullmq";
 import {
   markQueued, markManyQueued, markProcessing, markProcessed, markFailed,
   saveDeadLetter, traceWebhookEvent, getWebhookPayload, markDeadLetterReplayed,
@@ -762,25 +762,12 @@ function resultCounters(result){
   };
 }
 
-async function waitForLiveAccountingResume(idMessage,attempt){
-  let mode=await getAccountingMode();
-  if(mode!=="paused")return mode;
-  await traceWebhookEvent(idMessage,"worker.paused_guard",{
-    attempt,note:"Active job retained until accounting resumes"
-  });
-  while(mode==="paused"){
-    await new Promise(resolve=>setTimeout(resolve,500));
-    mode=await getAccountingMode();
-  }
-  await traceWebhookEvent(idMessage,"worker.paused_guard.released",{attempt,mode});
-  return mode;
-}
 
 export function startWorker() {
-  const liveWorker = new Worker(LIVE_QUEUE_NAME, async job => {
+  const liveWorker = new Worker(LIVE_QUEUE_NAME, async (job, token) => {
     const idMessage = job.data?.idMessage;
     const attempt=(job.attemptsMade || 0) + 1;
-    await markProcessing(idMessage, attempt,"live");
+
 
     // V68 ALWAYS-ON: do not ignore an event because its own timestamp, quoted
     // request, or reaction target predates a historical clean-start cutover.
@@ -789,9 +776,11 @@ export function startWorker() {
     await traceWebhookEvent(idMessage,"worker.live.started",{attempt,mode,jobId:job.id});
 
     if(mode==="paused"){
-      mode=await waitForLiveAccountingResume(idMessage,attempt);
+      await job.moveToDelayed(Date.now()+5000,token);
+      throw new DelayedError();
     }
 
+    await markProcessing(idMessage, attempt,"live");
     if(mode==="shadow"){
       await traceWebhookEvent(idMessage,"shadow.processed",{
         note:"No financial movement written in shadow mode",
@@ -807,7 +796,7 @@ export function startWorker() {
     return {ok:true,idMessage,mode:"live",result};
   }, {
     connection: redis,
-    concurrency: Number(process.env.WORKER_CONCURRENCY || 20)
+    concurrency: Math.max(1,Math.min(5,Number(process.env.WORKER_CONCURRENCY)||5))
   });
 
   liveWorker.on("completed", async job => {
