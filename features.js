@@ -1939,6 +1939,7 @@ async function authorizeComparisonCancellation(doneId,{eventId='',reason=''}={})
 async function recordReaction({producer,consumer,components,doneMessageId,reactionId,originalMessageId,userId=null,requestText="",repairMode=false,safeRecovery=false,outageRecoveryJobId="",occurredAt=null,comparisonMode=false}){
   if(comparisonMode)return await recordComparisonReaction({producer,consumer,components,doneMessageId,reactionId,originalMessageId,requestText,occurredAt});
   const client=await db.connect();
+  let released=false;
   try{
     await client.query("BEGIN");
 
@@ -2110,6 +2111,8 @@ async function recordReaction({producer,consumer,components,doneMessageId,reacti
     await client.query("COMMIT");
     // Outage recovery must never add/remove group participants or send policy traffic.
     // Balances are ledger-derived and remain correct; normal LIVE traffic will refresh status later.
+    client.release();
+    released=true;
     if(!safeRecovery)await Promise.all([producer.id,consumer.id].map(id=>syncCaptainBalanceState(id).catch(()=>null)));
     return {
       transactions:tx,
@@ -2127,12 +2130,12 @@ async function recordReaction({producer,consumer,components,doneMessageId,reacti
       requestText:String(requestText||'')
     };
   }catch(e){
-    await client.query("ROLLBACK");
+    if(!released)await client.query("ROLLBACK").catch(()=>{});
     // A concurrent/replayed event can hit the unique reference guard. Treat the exact
     // same reaction as idempotent instead of turning a harmless replay into a dead letter.
     if(e?.code==='23505')return {duplicate:true,transactions:[],legacyCovered:0,railwayCovered:0,crossProviderCovered:0,repairedMissing:0};
     throw e;
-  }finally{client.release();}
+  }finally{if(!released)client.release();}
 }
 async function issueSuspiciousReaction(details){
   const comparisonMode=await parallelComparisonEnabled();
@@ -2472,6 +2475,7 @@ async function applyPartialReaction(doneId,reactionId,targetQuantity,senderPhone
   const plan=partialPlan(originals,targetQuantity);if(plan.error)throw new Error(plan.error);
   const at=occurredAt||pair.occurredAt||new Date().toISOString();
   const client=await db.connect();
+  let released=false;
   try{
     await client.query("BEGIN");
     const captainIds=[...new Set([String(pair.producerId),String(pair.consumerId)])].sort((a,b)=>Number(a)-Number(b));
@@ -2501,13 +2505,15 @@ async function applyPartialReaction(doneId,reactionId,targetQuantity,senderPhone
     await client.query(`UPDATE inventory_reaction_cancellations SET status='REOPENED',reopened_at=NOW(),reopen_reason='تم استبدال التعديل الجزئي بتعديل أحدث' WHERE (done_message_id=$1 OR ($2<>'' AND POSITION($2 IN done_message_id)>0)) AND status='PARTIAL'`,[doneId,canonicalDoneId]);
     await client.query(`INSERT INTO inventory_reaction_cancellations(done_message_id,original_message_id,reaction_message_id,authorized_phone,authorized_name,status,mode,producer_id,consumer_id,movement_type,original_quantity,cancel_quantity,remaining_quantity,delta_quantity,reversed_ledger_ids) VALUES($1,$2,$3,$4,$5,'PARTIAL',$6,$7,$8,$9,$10,$11,$12,$13::jsonb)`,[doneId,pair.originalMessageId||null,reactionId,displayPhone(senderPhone),auth.name,plan.mixed?'PARTIAL_MIXED_PASSENGER':'PARTIAL',pair.producerId||null,pair.consumerId||null,plan.movementType,plan.total,targetQuantity,plan.remaining,targetQuantity-previous,JSON.stringify(ids)]);
     await client.query("COMMIT");
+    client.release();
+    released=true;
     if(!safeRecovery)await Promise.all(captainIds.map(id=>syncCaptainBalanceState(id).catch(()=>null)));
     return {partial:true,targetQuantity,previousTarget:previous,remaining:plan.remaining,adjustmentIds:ids,authorizedName:auth.name};
   }catch(e){
-    await client.query("ROLLBACK");
+    if(!released)await client.query("ROLLBACK").catch(()=>{});
     if(e?.code==="23505")return {duplicate:true,targetQuantity,remaining:plan.remaining};
     throw e;
-  }finally{client.release()}
+  }finally{if(!released)client.release();}
 }
 
 async function recalculateComparisonEditedRequest(target,newText,editPayload,options){
