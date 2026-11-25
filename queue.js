@@ -1,7 +1,7 @@
 import IORedis from "ioredis";
 import { Queue, Worker, DelayedError } from "bullmq";
 import {
-  markQueued, markManyQueued, markProcessing, markProcessed, markFailed,
+  db, markQueued, markManyQueued, markProcessing, markProcessed, markFailed,
   saveDeadLetter, traceWebhookEvent, getWebhookPayload, markDeadLetterReplayed,
   getWhatsappLiveCutover, setWhatsappLiveCutover, createWhatsappRepairRun,
   listWhatsappRepairEvents, markWhatsappRepairQueued, markWhatsappRepairResult,
@@ -103,7 +103,8 @@ async function enqueueLive(payload){
   const idMessage=payload?.idMessage;
   const jobId=payload?._abshirReplayNonce?`recovery:${idMessage}:${payload._abshirReplayNonce}`:idMessage;
   await whatsappQueue.add("process-webhook",payload,{jobId,priority:1});
-  await markQueued(idMessage,"live");
+  if(payload?._abshirReplayNonce)await markQueued(idMessage,"live");
+  else await db.query(`UPDATE whatsapp_events SET queued_at=NOW(),status=\'queued\',processing_mode=\'live\' WHERE id_message=$1 AND status IN (\'received\',\'queued\') AND processing_started_at IS NULL AND processed_at IS NULL`,[idMessage]);
   await traceWebhookEvent(idMessage,"queue.live.enqueued",{jobId});
   return {lane:"live",jobId};
 }
@@ -251,9 +252,11 @@ export async function enforceCleanStartBootGate(){
     }catch{}
   }
 
-  // Recover ONLY events that were themselves new but got ignored because they
-  // referenced an older request. Do not replay genuinely old pre-cutover base
-  // messages. This restores missed reply/reaction work from the old gate safely.
+  // Historical recovery must not block live worker startup.
+  return {mode:"live",state,alwaysOn:true,cutoverFiltering:false,recoveredReferenceEvents:0};
+}
+
+async function recoverLegacyReferencesAfterBoot(){
   let recoveredReferenceEvents=0;
   try{
     const missed=await listCleanStartReferenceIgnoredEvents(5000);
@@ -268,8 +271,46 @@ export async function enforceCleanStartBootGate(){
       }
     }
   }catch{}
-  return {mode:"live",state,alwaysOn:true,cutoverFiltering:false,recoveredReferenceEvents};
+  return recoveredReferenceEvents;
 }
+
+// Durable intake reconciliation: only original live events which never started.
+// Do not replay already-attempted financial events here; those need ordered outage recovery.
+let intakeRecoveryRunning=false;
+async function recoverUnqueuedLiveEvents(){
+  if(intakeRecoveryRunning)return;
+  intakeRecoveryRunning=true;
+  try{
+    if(await getAccountingMode()!=="live" || await whatsappQueue.isPaused())return;
+    const result=await db.query(`
+      SELECT id_message,raw_payload FROM whatsapp_events
+      WHERE status='received' AND processing_started_at IS NULL AND processed_at IS NULL
+        AND COALESCE(attempts,0)=0
+        AND COALESCE(processing_mode,'') IN ('','live','dropconnect_north','waha_live')
+        AND webhook_received_at BETWEEN NOW()-INTERVAL '24 hours' AND NOW()-INTERVAL '30 seconds'
+        AND raw_payload ? 'idMessage'
+        AND NOT (raw_payload ? '_abshirOutageRecovery' OR raw_payload ? '_abshirHistoryRecovery' OR raw_payload ? '_abshirOutageDependency' OR raw_payload ? '_abshirIdentityRepair')
+      ORDER BY webhook_received_at,id LIMIT 100
+    `);
+    let recovered=0;
+    for(const row of result.rows){
+      if(await getAccountingMode()!=="live" || await whatsappQueue.isPaused())break;
+      const payload=row.raw_payload;
+      if(!payload?.idMessage||String(payload.idMessage)!==String(row.id_message))continue;
+      const existing=await whatsappQueue.getJob(String(row.id_message));
+      if(existing)continue;
+      try{
+        await enqueueLive(payload);
+        recovered++;
+      }catch(error){
+        console.error("Live intake recovery failed:",row.id_message,error?.message||error);
+      }
+    }
+    if(recovered)console.info("Recovered unqueued live webhook events:",recovered);
+  }catch(error){console.error("Live intake reconciliation failed:",error?.message||error)}
+  finally{intakeRecoveryRunning=false}
+}
+
 
 export async function prepareRechargeOnlyCleanStart(){
   // Pause intake first; already-active jobs are allowed to finish before the
@@ -869,5 +910,10 @@ export function startWorker() {
   });
   repairWorker.on("error",err=>console.error("Repair worker error:",err));
 
+  void recoverUnqueuedLiveEvents();
+  const intakeTimer=setInterval(()=>void recoverUnqueuedLiveEvents(),60000);
+  intakeTimer.unref?.();
+  liveWorker.once("closed",()=>clearInterval(intakeTimer));
+  void recoverLegacyReferencesAfterBoot().catch(error=>console.error("Legacy reference recovery failed:",error?.message||error));
   return {liveWorker,repairWorker};
 }
